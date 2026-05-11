@@ -24,3 +24,6 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# Claude Code (local settings and scripts contain absolute paths)
+.claude/
