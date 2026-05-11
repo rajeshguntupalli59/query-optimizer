@@ -1,0 +1,67 @@
+QUERYOPTIMIZER — COMMERCIAL LICENSE
+=====================================
+
+Copyright (c) 2026. All rights reserved.
+
+GRANT OF LICENSE
+----------------
+Upon purchase, the licensee ("Customer") is granted a non-exclusive,
+non-transferable, perpetual license to install and use QueryOptimizer
+("the Software") solely within Customer's own internal infrastructure.
+
+PERMITTED USE
+-------------
+- Install and run the Software on any number of servers owned or leased
+  by the Customer.
+- Modify configuration files (.env, nginx.conf, docker-compose.yml) to
+  adapt the Software to Customer's environment.
+- Integrate the Software with Customer's own AI endpoints, databases, and
+  internal tooling.
+- Create internal backups of the data/ directory.
+
+RESTRICTIONS
+------------
+- The Software may not be sublicensed, resold, or redistributed.
+- The Software may not be offered as a hosted service to third parties.
+- Source code modifications are permitted for internal use only and may
+  not be distributed.
+- The Software may not be reverse-engineered for the purpose of creating
+  a competing product.
+
+NO WARRANTY / LIMITATION OF LIABILITY
+--------------------------------------
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED. THE VENDOR SHALL NOT BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING FROM THE USE OR
+INABILITY TO USE THE SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.
+
+THE CUSTOMER IS SOLELY RESPONSIBLE FOR:
+- All SQL queries executed using the Software.
+- Any changes made to their databases based on recommendations from the
+  Software, including index creation, query rewrites, or configuration changes.
+- Ensuring the Software is deployed in a secure manner within their
+  infrastructure.
+- Compliance with all applicable laws and regulations in their jurisdiction.
+
+SUPPORT
+-------
+Technical support is included with purchase for the period specified in
+the purchase agreement. Support is provided via email during business
+hours and covers installation, configuration, and bug reports.
+Support does not cover custom development, database administration
+consulting, or issues arising from Customer modifications.
+
+AI INTEGRATION
+--------------
+The AI features of the Software connect to endpoints configured solely
+by the Customer. The vendor has no access to, and bears no responsibility
+for, any data transmitted to or from Customer-configured AI endpoints.
+The Customer is responsible for reviewing the terms of service of any
+AI provider they choose to integrate.
+
+ENTIRE AGREEMENT
+----------------
+This license constitutes the entire agreement between the parties
+regarding the Software and supersedes all prior negotiations,
+representations, or agreements.

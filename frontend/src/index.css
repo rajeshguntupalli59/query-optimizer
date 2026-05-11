@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-950 text-gray-100 antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  * {
+    @apply border-gray-800;
+  }
+}
+
+/* Thin scrollbars everywhere */
+::-webkit-scrollbar          { width: 5px; height: 5px; }
+::-webkit-scrollbar-track    { @apply bg-transparent; }
+::-webkit-scrollbar-thumb    { @apply bg-gray-700 rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-gray-500; }
+
+/* Monaco editor reset */
+.monaco-editor .margin { background: transparent !important; }
