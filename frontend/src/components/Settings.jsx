@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { aiAssistant } from '../api/client'
-import { Settings2, CheckCircle, AlertTriangle, Loader2, ExternalLink, Sparkles } from 'lucide-react'
+import { Settings2, CheckCircle, AlertTriangle, Loader2, ExternalLink, Sparkles, KeyRound, ShieldCheck } from 'lucide-react'
 
 const PROVIDERS = [
   { value: 'openai',    label: 'OpenAI',          placeholder: 'https://api.openai.com/v1/chat/completions',    models: ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
@@ -10,14 +10,16 @@ const PROVIDERS = [
 ]
 
 export default function Settings() {
-  const [cfg, setCfg]         = useState({ endpoint: '', api_key: '', model: '', provider: 'openai', enabled: false })
-  const [saved, setSaved]     = useState(false)
-  const [saving, setSaving]   = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState('')
+  const [cfg, setCfg]           = useState({ endpoint: '', api_key: '', model: '', provider: 'openai', enabled: false })
+  const [saved, setSaved]       = useState(false)
+  const [saving, setSaving]     = useState(false)
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState('')
+  const [licenseKey, setLicenseKey] = useState('')
 
   useEffect(() => {
     aiAssistant.getConfig().then(data => { setCfg(data); setLoading(false) }).catch(() => setLoading(false))
+    fetch('/api/license').then(r => r.json()).then(d => { if (d.key) setLicenseKey(d.key) }).catch(() => {})
   }, [])
 
   const provider = PROVIDERS.find(p => p.value === cfg.provider) || PROVIDERS[0]
@@ -157,6 +159,21 @@ export default function Settings() {
             )}
           </div>
         </form>
+      </section>
+
+      {/* License */}
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <KeyRound size={15} className="text-gray-500" />
+          <h3 className="text-sm font-semibold text-gray-200">License</h3>
+        </div>
+        <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5 flex items-center gap-3">
+          <ShieldCheck size={18} className="text-green-400 shrink-0" />
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <p className="text-xs font-medium text-green-300">Activated</p>
+            <p className="text-xs font-mono text-gray-500 truncate">{licenseKey || '—'}</p>
+          </div>
+        </div>
       </section>
 
       {/* About */}

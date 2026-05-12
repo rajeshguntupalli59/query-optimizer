@@ -1,114 +1,101 @@
-# SQL Query Optimizer
+# QueryOptimizer
 
-A full-stack DBA tool for PostgreSQL query analysis, index advising, slow query detection, and query rewriting.
+**A self-hosted SQL performance workbench for PostgreSQL and Microsoft SQL Server DBAs.**
+
+QueryOptimizer gives your team a single browser-based tool to diagnose slow queries, find missing indexes, and rewrite inefficient SQL — without sending your data outside your infrastructure.
+
+---
 
 ## Features
 
-| Feature | Description |
+### EXPLAIN Visualizer
+Run `EXPLAIN` or `EXPLAIN ANALYZE` (PostgreSQL) and `SET SHOWPLAN_ALL ON` (SQL Server) and view the execution plan as an interactive tree. Color-coded nodes instantly show where sequential scans and expensive joins are hiding. Automatic warnings flag sequential scans, row estimate drift, and key lookups without any manual interpretation.
+
+### Index Advisor
+Paste any SQL query and get a prioritized list of missing indexes backed by live catalog data — not guesswork. Each recommendation comes with a ready-to-copy `CREATE INDEX` statement and an explanation of why it helps. For SQL Server, recommendations also pull from `sys.dm_db_missing_index_details`.
+
+### Slow Query Dashboard
+Surface your worst-performing queries ranked by average execution time. Pulls from `pg_stat_statements` (PostgreSQL) or `sys.dm_exec_query_stats` (SQL Server). Filter by minimum call count, reset statistics, and drill into timing details per query.
+
+### Query Rewriter
+Paste any SQL and get an instant anti-pattern report — no database connection needed. Catches `SELECT *`, `OR` in `WHERE`, functions on indexed columns, leading wildcards, `NOT IN`, large `OFFSET`, implicit cross joins, and more. Useful for reviewing queries before deploying them.
+
+### AI Assistant (Bring Your Own Endpoint)
+Connect your own AI — OpenAI, Anthropic, Ollama, Azure OpenAI, or any OpenAI-compatible API. The tool sends your SQL and context to your endpoint and returns a fully rewritten query with explanations, warnings, and tuning tips. Your API key is stored encrypted on your server and never sent to the vendor.
+
+### Multi-Connection Manager
+Save and switch between multiple database connections. Credentials are encrypted at rest using Fernet symmetric encryption. Supports both PostgreSQL and SQL Server from the same interface with a database-type badge on each connection.
+
+---
+
+## Supported Databases
+
+| Database | Supported Versions |
 |---|---|
-| **EXPLAIN Visualizer** | Run `EXPLAIN` / `EXPLAIN ANALYZE` and view an interactive plan tree with cost breakdown and warnings |
-| **Index Advisor** | Detect missing indexes from your SQL (FK columns, WHERE/ORDER BY columns, unindexed tables) |
-| **Slow Query Dashboard** | Surface the slowest queries from `pg_stat_statements` with timing histograms |
-| **Query Rewriter** | Rule-based analysis: `SELECT *`, leading wildcards, `NOT IN`, `OR`, `OFFSET` anti-patterns, and more |
-| **Multi-Connection Manager** | Save and switch between multiple PostgreSQL environments |
+| PostgreSQL | 12, 13, 14, 15, 16, 17 |
+| Microsoft SQL Server | 2016, 2017, 2019, 2022, Express, Azure SQL |
 
-## Prerequisites
+---
 
-- Python 3.11+
-- Node.js 18+
-- PostgreSQL 12+ (target databases)
+## Installation
 
-## Quick Start
-
-### 1. Backend
+QueryOptimizer ships as a single Docker Compose package. No external dependencies — just Docker.
 
 ```bash
-cd query-optimizer/backend
-python -m venv .venv
+# Extract the package
+unzip queryoptimizer-v1.0.zip
+cd queryoptimizer
 
 # Windows
-.venv\Scripts\activate
-# macOS/Linux
-source .venv/bin/activate
+powershell -ExecutionPolicy Bypass -File setup.ps1
 
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+# Linux / macOS
+chmod +x setup.sh && ./setup.sh
 ```
 
-The API will be available at `http://localhost:8000`. Interactive docs at `http://localhost:8000/docs`.
+Open your browser to `http://localhost:3000`.
 
-### 2. Frontend
+See [docs/QUICK_START.md](docs/QUICK_START.md) for a 5-minute setup guide and [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for the full manual.
 
-```bash
-cd query-optimizer/frontend
-npm install
-npm run dev
-```
+---
 
-Open `http://localhost:5173` in your browser.
+## Security
 
-## Enabling pg_stat_statements (Slow Query tab)
+- **No cloud dependency.** The tool makes no outbound connections except to AI endpoints you configure.
+- **No telemetry.** No usage data, error reports, or analytics are sent anywhere.
+- **Encrypted credentials.** Database passwords are encrypted with Fernet symmetric encryption before being written to the local SQLite database. The encryption key is auto-generated on first start and stored in `data/.secret_key`.
+- **AI privacy.** Only the SQL text (and any context you type) is sent to your AI endpoint. No database credentials, schema, or query results are included.
+- **Client responsibility.** The client is responsible for all database changes made using this tool. The vendor provides the software as-is with no warranty. See [LICENSE](LICENSE).
 
-Add to your `postgresql.conf`:
+---
 
-```ini
-shared_preload_libraries = 'pg_stat_statements'
-pg_stat_statements.track = all
-```
+## System Requirements
 
-Then restart PostgreSQL and run:
+| Requirement | Minimum |
+|---|---|
+| OS | Windows 10 / Server 2019, Ubuntu 20.04+, macOS 12+ |
+| CPU | 2 cores |
+| RAM | 2 GB |
+| Disk | 1 GB |
+| Docker | Docker Desktop 4.0+ (Windows/Mac) or Docker Engine 20.10+ (Linux) |
 
-```sql
-CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
-```
+---
 
-## Project Structure
+## Documentation
 
-```
-query-optimizer/
-├── backend/
-│   ├── main.py                         # FastAPI entry point
-│   ├── schemas.py                      # Pydantic models
-│   ├── requirements.txt
-│   ├── routers/
-│   │   ├── connections.py              # CRUD for saved connections
-│   │   ├── explain.py                  # EXPLAIN / EXPLAIN ANALYZE
-│   │   ├── indexes.py                  # Index recommendations
-│   │   ├── slow_queries.py             # pg_stat_statements
-│   │   └── rewriter.py                 # Rule-based query rewriting
-│   └── services/
-│       ├── connection_manager.py       # DB connection pool
-│       ├── explain_analyzer.py         # Plan tree parsing + warnings
-│       ├── index_advisor.py            # Missing index detection
-│       ├── slow_query_detector.py      # Slow query fetching
-│       └── query_rewriter.py           # Rewrite rules engine
-└── frontend/
-    └── src/
-        ├── App.jsx                     # Shell + tab routing
-        ├── api/client.js               # Axios API wrappers
-        └── components/
-            ├── ConnectionManager.jsx
-            ├── SqlEditor.jsx           # Monaco-based SQL editor
-            ├── ExplainPlan.jsx
-            ├── IndexAdvisor.jsx
-            ├── SlowQueries.jsx
-            └── QueryRewriter.jsx
-```
+| Document | Description |
+|---|---|
+| [QUICK_START.md](docs/QUICK_START.md) | 5-minute setup and first query |
+| [USER_GUIDE.md](docs/USER_GUIDE.md) | Complete feature reference |
+| [TEST_GUIDE.md](docs/TEST_GUIDE.md) | Step-by-step verification with sample database |
 
-## API Reference
+---
 
-| Method | Path | Description |
-|---|---|---|
-| GET | `/connections` | List saved connections |
-| POST | `/connections` | Add a new connection |
-| DELETE | `/connections/{id}` | Remove a connection |
-| POST | `/connections/{id}/test` | Test connectivity |
-| POST | `/explain` | Run EXPLAIN (ANALYZE) |
-| POST | `/indexes/recommend` | Get index recommendations |
-| GET | `/slow-queries/{id}` | Fetch slow queries |
-| POST | `/slow-queries/{id}/reset` | Reset pg_stat_statements |
-| POST | `/rewrite` | Analyze SQL for anti-patterns |
+## License
 
-## Security Note
+Commercial self-hosted license. See [LICENSE](LICENSE) for full terms.
+One license per installation. The client is responsible for all use of the software after delivery.
 
-Connection passwords are stored in memory only (no disk persistence). For production use, add encryption at rest (e.g., Fernet key stored in an environment variable) and HTTPS.
+---
+
+*QueryOptimizer v1.0*

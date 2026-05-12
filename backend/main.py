@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db
-from routers import connections, explain, indexes, slow_queries, rewriter, ai
+from routers import connections, explain, indexes, slow_queries, rewriter, ai, license as license_router
 
 
 @asynccontextmanager
@@ -33,6 +33,7 @@ app.include_router(indexes.router)
 app.include_router(slow_queries.router)
 app.include_router(rewriter.router)
 app.include_router(ai.router)
+app.include_router(license_router.router)
 
 
 @app.get("/health")

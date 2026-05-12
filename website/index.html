@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QueryOptimizer — Self-Hosted SQL Performance Workbench</title>
+  <meta name="description" content="Diagnose slow queries, find missing indexes, and rewrite inefficient SQL for PostgreSQL and SQL Server. Self-hosted. No cloud. One-time price." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gray: {
+              950: '#0a0a0f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    .gradient-text {
+      background: linear-gradient(135deg, #60a5fa, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .feature-card:hover { transform: translateY(-2px); }
+    .feature-card { transition: transform 0.2s ease; }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans antialiased">
+
+  <!-- ── Nav ── -->
+  <nav class="fixed top-0 left-0 right-0 z-50 border-b border-gray-800/60 bg-gray-950/90 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+        </div>
+        <span class="text-sm font-bold text-white tracking-tight">QueryOptimizer</span>
+        <span class="text-[10px] text-gray-600 font-medium mt-0.5">v1.0</span>
+      </div>
+      <div class="hidden md:flex items-center gap-6 text-xs text-gray-400">
+        <a href="#features" class="hover:text-white transition">Features</a>
+        <a href="#databases" class="hover:text-white transition">Databases</a>
+        <a href="#security" class="hover:text-white transition">Security</a>
+        <a href="#pricing" class="hover:text-white transition">Pricing</a>
+      </div>
+      <a href="#pricing" class="text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition">
+        Buy Now — $149
+      </a>
+    </div>
+  </nav>
+
+  <!-- ── Hero ── -->
+  <section class="pt-32 pb-24 px-6 text-center">
+    <div class="max-w-4xl mx-auto">
+      <div class="inline-flex items-center gap-2 bg-blue-950/60 border border-blue-800/40 rounded-full px-4 py-1.5 mb-8">
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+        <span class="text-xs text-blue-300 font-medium">Self-hosted · No subscription · No cloud</span>
+      </div>
+      <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
+        Stop guessing why your<br />
+        <span class="gradient-text">SQL is slow</span>
+      </h1>
+      <p class="text-lg text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+        QueryOptimizer is a self-hosted workbench for DBAs and developers. Visualize execution plans, find missing indexes, surface slow queries, and rewrite bad SQL — for <strong class="text-gray-200">PostgreSQL and SQL Server</strong>, in the same tool.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="#pricing" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-3.5 rounded-xl text-sm transition shadow-lg shadow-blue-900/40">
+          Buy once — $149 per installation
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+        <a href="#features" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white font-medium px-8 py-3.5 rounded-xl text-sm transition">
+          See all features
+        </a>
+      </div>
+      <p class="text-xs text-gray-600 mt-5">One-time payment · Lifetime use · Installs in 5 minutes with Docker</p>
+    </div>
+  </section>
+
+  <!-- ── Screenshot placeholder ── -->
+  <section class="px-6 pb-20">
+    <div class="max-w-5xl mx-auto rounded-2xl border border-gray-800 bg-gray-900/60 overflow-hidden shadow-2xl shadow-black/60">
+      <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-800 bg-gray-900">
+        <div class="w-3 h-3 rounded-full bg-red-500/60"></div>
+        <div class="w-3 h-3 rounded-full bg-yellow-500/60"></div>
+        <div class="w-3 h-3 rounded-full bg-green-500/60"></div>
+        <span class="text-xs text-gray-600 ml-2">QueryOptimizer · EXPLAIN Visualizer</span>
+      </div>
+      <div>
+        <img src="screenshot.png" alt="QueryOptimizer EXPLAIN Visualizer" class="w-full" />
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Features ── -->
+  <section id="features" class="px-6 py-24 border-t border-gray-800/50">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl font-bold mb-4">Everything you need to tune slow queries</h2>
+        <p class="text-gray-400 max-w-xl mx-auto">Six tools in one browser-based workbench. No agents, no SaaS, no data leaving your server.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+        <!-- EXPLAIN -->
+        <div class="feature-card bg-gray-900/60 border border-gray-800 rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-blue-950 border border-blue-800/40 flex items-center justify-center mb-4">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <h3 class="font-semibold text-white mb-2">EXPLAIN Visualizer</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Run EXPLAIN ANALYZE (PostgreSQL) or SET STATISTICS PROFILE ON (SQL Server) and see the plan as an interactive color-coded tree. Automatic warnings flag seq scans, row estimate drift, and expensive joins — no manual interpretation needed.</p>
+        </div>
+
+        <!-- Index Advisor -->
+        <div class="feature-card bg-gray-900/60 border border-gray-800 rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-green-950 border border-green-800/40 flex items-center justify-center mb-4">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+          </div>
+          <h3 class="font-semibold text-white mb-2">Index Advisor</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Paste any query and get a prioritized list of missing indexes backed by live catalog data — not guesswork. Each recommendation includes a ready-to-copy CREATE INDEX statement and an explanation of why it helps.</p>
+        </div>
+
+        <!-- Slow Query Dashboard -->
+        <div class="feature-card bg-gray-900/60 border border-gray-800 rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-orange-950 border border-orange-800/40 flex items-center justify-center mb-4">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3 class="font-semibold text-white mb-2">Slow Query Dashboard</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Surface your worst-performing queries ranked by average execution time. Reads from pg_stat_statements (PostgreSQL) or sys.dm_exec_query_stats (SQL Server). Filter, drill in, and reset stats with one click.</p>
+        </div>
+
+        <!-- Query Rewriter -->
+        <div class="feature-card bg-gray-900/60 border border-gray-800 rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-purple-950 border border-purple-800/40 flex items-center justify-center mb-4">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </div>
+          <h3 class="font-semibold text-white mb-2">Query Rewriter</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Catch anti-patterns before they hit production — no database connection needed. Detects SELECT *, OR in WHERE, functions on indexed columns, leading wildcards, NOT IN, large OFFSET, implicit cross joins, and more.</p>
+        </div>
+
+        <!-- AI Assistant -->
+        <div class="feature-card bg-gray-900/60 border border-purple-900/30 rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-purple-950 border border-purple-700/40 flex items-center justify-center mb-4">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+          </div>
+          <h3 class="font-semibold text-white mb-2">AI Assistant <span class="text-xs font-normal text-purple-400 ml-1">Bring Your Own Key</span></h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Connect your own AI — OpenAI, Anthropic, Ollama, or Azure OpenAI. Get a fully rewritten query with explanations, warnings, and tuning tips. Your API key stays encrypted on your server and never touches our infrastructure.</p>
+        </div>
+
+        <!-- Connection Manager -->
+        <div class="feature-card bg-gray-900/60 border border-gray-800 rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-teal-950 border border-teal-800/40 flex items-center justify-center mb-4">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+          </div>
+          <h3 class="font-semibold text-white mb-2">Multi-Connection Manager</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Save and switch between multiple database connections. Credentials encrypted at rest with Fernet symmetric encryption. Supports PostgreSQL and SQL Server from the same interface, with a database-type badge on each connection.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Databases ── -->
+  <section id="databases" class="px-6 py-24 border-t border-gray-800/50">
+    <div class="max-w-4xl mx-auto text-center">
+      <h2 class="text-3xl font-bold mb-4">Works with your database</h2>
+      <p class="text-gray-400 mb-12">Full feature support for both PostgreSQL and SQL Server — including named instances, Windows Authentication, and Azure SQL.</p>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-gray-900/60 border border-blue-900/30 rounded-2xl p-8">
+          <div class="w-12 h-12 rounded-xl bg-blue-900/40 border border-blue-700/30 flex items-center justify-center mx-auto mb-4">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+          </div>
+          <h3 class="font-bold text-white text-lg mb-2">PostgreSQL</h3>
+          <p class="text-sm text-blue-400 font-medium mb-4">Versions 12 — 17</p>
+          <ul class="text-sm text-gray-400 space-y-1.5 text-left">
+            <li class="flex gap-2"><span class="text-green-500">✓</span> EXPLAIN ANALYZE with timing</li>
+            <li class="flex gap-2"><span class="text-green-500">✓</span> pg_stat_statements slow query tracking</li>
+            <li class="flex gap-2"><span class="text-green-500">✓</span> Live catalog index recommendations</li>
+            <li class="flex gap-2"><span class="text-green-500">✓</span> Un-indexed foreign key detection</li>
+          </ul>
+        </div>
+        <div class="bg-gray-900/60 border border-orange-900/30 rounded-2xl p-8">
+          <div class="w-12 h-12 rounded-xl bg-orange-900/40 border border-orange-700/30 flex items-center justify-center mx-auto mb-4">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+          </div>
+          <h3 class="font-bold text-white text-lg mb-2">Microsoft SQL Server</h3>
+          <p class="text-sm text-orange-400 font-medium mb-4">2016 · 2017 · 2019 · 2022 · Express · Azure SQL</p>
+          <ul class="text-sm text-gray-400 space-y-1.5 text-left">
+            <li class="flex gap-2"><span class="text-green-500">✓</span> SET STATISTICS PROFILE ON plans</li>
+            <li class="flex gap-2"><span class="text-green-500">✓</span> sys.dm_exec_query_stats slow queries</li>
+            <li class="flex gap-2"><span class="text-green-500">✓</span> sys.dm_db_missing_index_details</li>
+            <li class="flex gap-2"><span class="text-green-500">✓</span> Named instances + Windows Auth</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Security ── -->
+  <section id="security" class="px-6 py-24 border-t border-gray-800/50">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl font-bold mb-4">Built for self-hosting</h2>
+        <p class="text-gray-400">Your database credentials and query data never leave your server.</p>
+      </div>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="flex gap-4 bg-gray-900/40 border border-gray-800 rounded-xl p-5">
+          <div class="text-green-400 mt-0.5 shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div>
+            <p class="font-medium text-sm text-white mb-1">No cloud dependency</p>
+            <p class="text-xs text-gray-400">Zero outbound connections except to AI endpoints you configure. Your queries stay on your infrastructure.</p>
+          </div>
+        </div>
+        <div class="flex gap-4 bg-gray-900/40 border border-gray-800 rounded-xl p-5">
+          <div class="text-green-400 mt-0.5 shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div>
+            <p class="font-medium text-sm text-white mb-1">Encrypted credentials</p>
+            <p class="text-xs text-gray-400">Database passwords are encrypted with Fernet symmetric encryption before being written to the local SQLite database.</p>
+          </div>
+        </div>
+        <div class="flex gap-4 bg-gray-900/40 border border-gray-800 rounded-xl p-5">
+          <div class="text-green-400 mt-0.5 shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+          </div>
+          <div>
+            <p class="font-medium text-sm text-white mb-1">No telemetry</p>
+            <p class="text-xs text-gray-400">No usage data, error reports, or analytics are sent anywhere, ever.</p>
+          </div>
+        </div>
+        <div class="flex gap-4 bg-gray-900/40 border border-gray-800 rounded-xl p-5">
+          <div class="text-green-400 mt-0.5 shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <div>
+            <p class="font-medium text-sm text-white mb-1">Ships as Docker Compose</p>
+            <p class="text-xs text-gray-400">Single file, no external dependencies. Installs in 5 minutes on Windows, Linux, or macOS.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── How it installs ── -->
+  <section class="px-6 py-24 border-t border-gray-800/50">
+    <div class="max-w-3xl mx-auto text-center">
+      <h2 class="text-3xl font-bold mb-4">Up in 5 minutes</h2>
+      <p class="text-gray-400 mb-12">Requires Docker Desktop (Windows/Mac) or Docker Engine (Linux). That's it.</p>
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 text-left font-mono text-sm mb-8">
+        <p class="text-gray-500 mb-2"># 1. Extract the ZIP you received after purchase</p>
+        <p class="text-gray-200">unzip queryoptimizer-v1.0.zip</p>
+        <p class="text-gray-200">cd queryoptimizer</p>
+        <br/>
+        <p class="text-gray-500 mb-2"># 2. Run the installer</p>
+        <p class="text-gray-200"><span class="text-gray-500"># Windows:</span> powershell -ExecutionPolicy Bypass -File setup.ps1</p>
+        <p class="text-gray-200"><span class="text-gray-500"># Linux/macOS:</span> chmod +x setup.sh &amp;&amp; ./setup.sh</p>
+        <br/>
+        <p class="text-gray-500 mb-2"># 3. Open your browser</p>
+        <p class="text-blue-400">http://localhost:3000</p>
+      </div>
+      <p class="text-sm text-gray-500">Add a database connection, run your first EXPLAIN, done.</p>
+    </div>
+  </section>
+
+  <!-- ── Pricing ── -->
+  <section id="pricing" class="px-6 py-24 border-t border-gray-800/50">
+    <div class="max-w-xl mx-auto text-center">
+      <h2 class="text-3xl font-bold mb-4">Simple pricing</h2>
+      <p class="text-gray-400 mb-12">One price. Yours forever. No subscription.</p>
+
+      <div class="bg-gray-900 border border-blue-800/40 rounded-2xl p-8 shadow-xl shadow-blue-950/20">
+        <div class="text-5xl font-extrabold text-white mb-1">$149</div>
+        <div class="text-sm text-gray-400 mb-8">per installation · one-time payment</div>
+
+        <ul class="text-sm text-gray-300 space-y-3 mb-8 text-left">
+          <li class="flex gap-3"><span class="text-green-400 font-bold">✓</span> All 6 features — EXPLAIN, Index Advisor, Slow Queries, Query Rewriter, AI Assistant, Connection Manager</li>
+          <li class="flex gap-3"><span class="text-green-400 font-bold">✓</span> PostgreSQL 12–17 + SQL Server 2016–2022 (including Express &amp; Azure SQL)</li>
+          <li class="flex gap-3"><span class="text-green-400 font-bold">✓</span> Lifetime use — pay once, use forever</li>
+          <li class="flex gap-3"><span class="text-green-400 font-bold">✓</span> Installs in 5 minutes with Docker</li>
+          <li class="flex gap-3"><span class="text-green-400 font-bold">✓</span> Full documentation included</li>
+          <li class="flex gap-3"><span class="text-green-400 font-bold">✓</span> Email support for setup questions</li>
+        </ul>
+
+        <!-- Replace href with your Lemon Squeezy / Gumroad buy link -->
+        <a href="https://queryoptimizer.lemonsqueezy.com/checkout/buy/50cb7c74-b67d-4058-ba70-4f108cc9f686" class="block w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl text-base transition shadow-lg shadow-blue-900/40 mb-4">
+          Buy QueryOptimizer — $149
+        </a>
+        <p class="text-xs text-gray-600">Secure checkout · Instant ZIP delivery · 1 license = 1 installation</p>
+      </div>
+
+      <p class="text-sm text-gray-500 mt-6">Need more than one installation? <a href="mailto:queryoptimizer78@gmail.com" class="text-blue-400 hover:underline">Contact us</a> for team pricing.</p>
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="border-t border-gray-800/50 px-6 py-10">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+        </div>
+        <span class="text-sm font-semibold text-gray-400">QueryOptimizer v1.0</span>
+      </div>
+      <p class="text-xs text-gray-700">Commercial self-hosted license · One license per installation · <a href="mailto:queryoptimizer78@gmail.com" class="hover:text-gray-500 transition">Contact</a></p>
+    </div>
+  </footer>
+
+</body>
+</html>

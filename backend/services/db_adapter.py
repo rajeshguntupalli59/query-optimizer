@@ -93,13 +93,19 @@ class MSSQLAdapter(DBAdapter):
     def open(self, cfg: dict):
         import pyodbc
         driver = self._driver()
-        # TrustServerCertificate=yes needed for self-signed certs (dev servers)
+        host = cfg["host"]
+        # Named instances (host\INSTANCE) must not have port appended
+        server = host if "\\" in host else f"{host},{cfg['port']}"
+        auth = (
+            "Trusted_Connection=yes;"
+            if not cfg.get("username")
+            else f"UID={cfg['username']};PWD={cfg['password']};"
+        )
         conn_str = (
             f"DRIVER={{{driver}}};"
-            f"SERVER={cfg['host']},{cfg['port']};"
+            f"SERVER={server};"
             f"DATABASE={cfg['database']};"
-            f"UID={cfg['username']};"
-            f"PWD={cfg['password']};"
+            + auth +
             "TrustServerCertificate=yes;"
             "Connection Timeout=10;"
         )

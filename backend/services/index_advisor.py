@@ -73,7 +73,7 @@ def _pg_unindexed_tables(cur, sql: str) -> list[dict]:
     for table in _extract_tables(sql):
         schema, tname = _split_schema_pg(table)
         cur.execute(
-            "SELECT indexname FROM pg_stat_user_indexes WHERE schemaname=%s AND tablename=%s",
+            "SELECT indexrelname FROM pg_stat_user_indexes WHERE schemaname=%s AND relname=%s",
             (schema, tname),
         )
         if not cur.fetchall():
@@ -108,7 +108,11 @@ def _pg_fk_without_index(cur, sql: str) -> list[dict]:
     """)
     tables_in_sql = {t.lower() for t in _extract_tables(sql)}
     recs = []
-    for schema, tname, col, ftable in cur.fetchall():
+    for row in cur.fetchall():
+        schema = row["table_schema"]
+        tname  = row["table_name"]
+        col    = row["column_name"]
+        ftable = row["ftable"]
         if tname.lower() in tables_in_sql or ftable.lower() in tables_in_sql:
             recs.append({
                 "table": f"{schema}.{tname}", "columns": [col],
