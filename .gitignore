@@ -15,6 +15,7 @@ backend/.pytest_cache/
 # Node
 frontend/node_modules/
 frontend/dist/
+frontend/.vite/
 
 # Build output (client delivery ZIPs)
 dist/
