@@ -4,7 +4,7 @@ from typing import Optional, Any, Literal
 
 class ConnectionCreate(BaseModel):
     name: str
-    db_type: Literal['postgres', 'mssql'] = 'postgres'
+    db_type: Literal['postgres', 'mssql', 'mysql'] = 'postgres'
     host: str
     port: int = 5432
     database: str

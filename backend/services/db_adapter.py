@@ -129,16 +129,52 @@ class MSSQLAdapter(DBAdapter):
 
 
 # ---------------------------------------------------------------------------
+# MySQL
+# ---------------------------------------------------------------------------
+class MySQLAdapter(DBAdapter):
+    default_port  = 3306
+    placeholder   = "%s"
+
+    def open(self, cfg: dict):
+        import pymysql
+        return pymysql.connect(
+            host=cfg["host"],
+            port=cfg["port"],
+            database=cfg["database"],
+            user=cfg["username"],
+            password=cfg["password"],
+            connect_timeout=10,
+            autocommit=True,
+        )
+
+    def cursor_fetchall_dicts(self, conn, sql: str, params: tuple = ()) -> list[dict]:
+        cursor = conn.cursor(pymysql.cursors.DictCursor) if hasattr(conn, 'cursor') else conn.cursor()
+        cursor.execute(sql, params or None)
+        return [dict(r) for r in cursor.fetchall()]
+
+    def server_version(self, conn) -> int:
+        cursor = conn.cursor()
+        cursor.execute("SELECT VERSION()")
+        ver_str = cursor.fetchone()[0]  # e.g. "8.4.9"
+        parts = ver_str.split(".")
+        major = int(parts[0]) if parts else 0
+        minor = int(parts[1]) if len(parts) > 1 else 0
+        patch = int((parts[2] or "0").split("-")[0]) if len(parts) > 2 else 0
+        return major * 10000 + minor * 100 + patch
+
+
+# ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------
 _ADAPTERS: dict[str, DBAdapter] = {
     "postgres": PostgreSQLAdapter(),
     "mssql":    MSSQLAdapter(),
+    "mysql":    MySQLAdapter(),
 }
 
 
 def get_adapter(db_type: str) -> DBAdapter:
     adapter = _ADAPTERS.get(db_type)
     if not adapter:
-        raise ValueError(f"Unsupported db_type '{db_type}'. Choose 'postgres' or 'mssql'.")
+        raise ValueError(f"Unsupported db_type '{db_type}'. Choose 'postgres', 'mssql', or 'mysql'.")
     return adapter

@@ -18,6 +18,8 @@ def recommend_indexes(conn_id: str, sql: str) -> list[dict]:
     try:
         if cfg["db_type"] == "postgres":
             return _pg_recommend(conn, sql)
+        elif cfg["db_type"] == "mysql":
+            return _mysql_recommend(conn, sql)
         else:
             return _mssql_recommend(conn, sql)
     finally:
@@ -157,6 +159,86 @@ def _pg_index_exists(cur, schema: str, table: str, column: str) -> bool:
         (schema, table, f"%({column})%"),
     )
     return cur.fetchone() is not None
+
+
+# ---------------------------------------------------------------------------
+# MySQL
+# ---------------------------------------------------------------------------
+def _mysql_recommend(conn, sql: str) -> list[dict]:
+    recs = []
+    cursor = conn.cursor()
+    recs.extend(_mysql_fk_without_index(cursor, sql, conn))
+    recs.extend(_mysql_infer_from_sql(cursor, sql, conn))
+    return _deduplicate(recs)
+
+
+def _mysql_fk_without_index(cursor, sql: str, conn) -> list[dict]:
+    cursor.execute("SELECT DATABASE()")
+    db_name = cursor.fetchone()[0]
+    cursor.execute("""
+        SELECT kcu.TABLE_NAME, kcu.COLUMN_NAME, kcu.REFERENCED_TABLE_NAME
+        FROM information_schema.KEY_COLUMN_USAGE kcu
+        WHERE kcu.TABLE_SCHEMA = %s
+          AND kcu.REFERENCED_TABLE_NAME IS NOT NULL
+          AND NOT EXISTS (
+              SELECT 1 FROM information_schema.STATISTICS s
+              WHERE s.TABLE_SCHEMA = kcu.TABLE_SCHEMA
+                AND s.TABLE_NAME = kcu.TABLE_NAME
+                AND s.COLUMN_NAME = kcu.COLUMN_NAME
+                AND s.SEQ_IN_INDEX = 1
+          )
+    """, (db_name,))
+    tables_in_sql = {t.lower() for t in _extract_tables(sql)}
+    recs = []
+    for row in cursor.fetchall():
+        tname, col, ref = row[0], row[1], row[2]
+        if tables_in_sql and tname.lower() not in tables_in_sql and ref.lower() not in tables_in_sql:
+            continue
+        recs.append({
+            "table": f"{db_name}.{tname}", "columns": [col],
+            "reason": f"FK column '{col}' references '{ref}' but has no supporting index",
+            "ddl": f"CREATE INDEX idx_{tname}_{col} ON `{tname}` (`{col}`);",
+            "estimated_benefit": "Medium-High",
+        })
+    return recs
+
+
+def _mysql_infer_from_sql(cursor, sql: str, conn) -> list[dict]:
+    recs = []
+    cursor.execute("SELECT DATABASE()")
+    db_name = cursor.fetchone()[0]
+    upper = sql.upper()
+    where_cols = re.findall(r'WHERE\s+(?:\w+\.)?(\w+)\s*[=<>!]', upper)
+    order_cols  = re.findall(r'ORDER\s+BY\s+(?:\w+\.)?(\w+)', upper)
+    tables = _extract_tables(sql)
+    if not tables:
+        return recs
+    tname = tables[0].split(".")[-1]
+    for col in set(where_cols):
+        if not _mysql_index_exists(cursor, db_name, tname, col.lower()):
+            recs.append({
+                "table": f"{db_name}.{tname}", "columns": [col.lower()],
+                "reason": f"WHERE column `{col.lower()}` has no index",
+                "ddl": f"CREATE INDEX idx_{tname}_{col.lower()} ON `{tname}` (`{col.lower()}`);",
+                "estimated_benefit": "High",
+            })
+    for col in set(order_cols):
+        if not _mysql_index_exists(cursor, db_name, tname, col.lower()):
+            recs.append({
+                "table": f"{db_name}.{tname}", "columns": [col.lower()],
+                "reason": f"ORDER BY column `{col.lower()}` has no index",
+                "ddl": f"CREATE INDEX idx_{tname}_{col.lower()} ON `{tname}` (`{col.lower()}`);",
+                "estimated_benefit": "Medium",
+            })
+    return recs
+
+
+def _mysql_index_exists(cursor, db_name: str, table: str, column: str) -> bool:
+    cursor.execute("""
+        SELECT 1 FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA=%s AND TABLE_NAME=%s AND COLUMN_NAME=%s LIMIT 1
+    """, (db_name, table, column))
+    return cursor.fetchone() is not None
 
 
 # ---------------------------------------------------------------------------

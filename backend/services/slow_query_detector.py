@@ -16,6 +16,8 @@ def get_slow_queries(conn_id: str, limit: int = 20, min_calls: int = 1) -> list[
     try:
         if cfg["db_type"] == "postgres":
             return _pg_slow_queries(conn, limit, min_calls)
+        elif cfg["db_type"] == "mysql":
+            return _mysql_slow_queries(conn, limit, min_calls)
         else:
             return _mssql_slow_queries(conn, limit, min_calls)
     finally:
@@ -27,6 +29,8 @@ def reset_stats(conn_id: str) -> dict:
     try:
         if cfg["db_type"] == "postgres":
             return _pg_reset(conn)
+        elif cfg["db_type"] == "mysql":
+            return _mysql_reset(conn)
         else:
             return _mssql_reset(conn)
     finally:
@@ -80,6 +84,43 @@ def _pg_reset(conn) -> dict:
         cur.execute("SELECT pg_stat_statements_reset()")
         conn.commit()
     return {"success": True}
+
+
+# ---------------------------------------------------------------------------
+# MySQL
+# ---------------------------------------------------------------------------
+def _mysql_slow_queries(conn, limit: int, min_calls: int) -> list[dict]:
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f"""
+            SELECT
+                DIGEST_TEXT                                AS query,
+                COUNT_STAR                                 AS calls,
+                SUM_TIMER_WAIT   / 1000000000.0            AS total_time_ms,
+                AVG_TIMER_WAIT   / 1000000000.0            AS mean_time_ms,
+                MIN_TIMER_WAIT   / 1000000000.0            AS min_time_ms,
+                MAX_TIMER_WAIT   / 1000000000.0            AS max_time_ms,
+                SUM_ROWS_SENT                              AS rows,
+                NULL                                       AS hit_percent
+            FROM performance_schema.events_statements_summary_by_digest
+            WHERE DIGEST_TEXT IS NOT NULL
+              AND COUNT_STAR >= {min_calls}
+            ORDER BY SUM_TIMER_WAIT DESC
+            LIMIT {limit}
+        """)
+        cols = [d[0] for d in cursor.description]
+        return [dict(zip(cols, row)) for row in cursor.fetchall()]
+    except Exception as e:
+        return [{"error": f"performance_schema not available: {e}"}]
+
+
+def _mysql_reset(conn) -> dict:
+    cursor = conn.cursor()
+    try:
+        cursor.execute("TRUNCATE TABLE performance_schema.events_statements_summary_by_digest")
+        return {"success": True}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 # ---------------------------------------------------------------------------

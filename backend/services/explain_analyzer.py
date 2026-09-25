@@ -19,6 +19,8 @@ def run_explain(conn_id: str, sql: str, analyze: bool, buffers: bool, verbose: b
     try:
         if cfg["db_type"] == "postgres":
             return _pg_explain(conn, sql, analyze, buffers, verbose)
+        elif cfg["db_type"] == "mysql":
+            return _mysql_explain(conn, sql, analyze)
         else:
             return _mssql_explain(conn, sql, analyze)
     finally:
@@ -234,6 +236,100 @@ def _mssql_walk(node: dict, warnings: list):
 
     for child in node.get("Plans", []):
         _mssql_walk(child, warnings)
+
+
+# ---------------------------------------------------------------------------
+# MySQL
+# ---------------------------------------------------------------------------
+def _mysql_explain(conn, sql: str, analyze: bool) -> dict:
+    cursor = conn.cursor()
+    if analyze:
+        try:
+            cursor.execute(f"EXPLAIN ANALYZE {sql}")
+            rows = cursor.fetchall()
+            analyze_text = "\n".join(str(r[0]) for r in rows)
+            warnings = []
+            if "Full table scan" in analyze_text or "ALL" in analyze_text:
+                warnings.append({"type": "table_scan", "node": "MySQL", "message": "Full table scan detected — consider adding an index"})
+            return {
+                "plan": [{"Plan": {"Node Type": "MySQL Query", "Description": analyze_text, "Plans": []}}],
+                "summary": {"total_cost": None, "startup_cost": None, "plan_rows": None,
+                            "node_type": "MySQL", "actual_total_time": None, "actual_rows": None, "warnings": warnings},
+                "dialect": "mysql",
+            }
+        except Exception:
+            pass
+    cursor.execute(f"EXPLAIN FORMAT=JSON {sql}")
+    row = cursor.fetchone()
+    plan_json = json.loads(row[0])
+    tree = _mysql_json_to_tree(plan_json)
+    warnings = _mysql_warnings(plan_json)
+    cost = _mysql_extract_cost(plan_json)
+    return {
+        "plan": [{"Plan": tree}],
+        "summary": {"total_cost": cost, "startup_cost": None, "plan_rows": None,
+                    "node_type": "MySQL", "actual_total_time": None, "actual_rows": None, "warnings": warnings},
+        "dialect": "mysql",
+    }
+
+
+def _mysql_extract_cost(plan: dict) -> float | None:
+    try:
+        return float(plan["query_block"]["cost_info"]["query_cost"])
+    except Exception:
+        return None
+
+
+def _mysql_json_to_tree(plan: dict) -> dict:
+    block = plan.get("query_block", {})
+    cost = block.get("cost_info", {}).get("query_cost")
+    children = []
+    for key in ("table", "nested_loop", "union_result", "ordering_operation", "grouping_operation"):
+        val = block.get(key)
+        if val:
+            if isinstance(val, list):
+                for item in val:
+                    tbl = item.get("table") or item
+                    children.append(_mysql_table_to_node(tbl))
+            else:
+                children.append(_mysql_table_to_node(val))
+    return {
+        "Node Type": "MySQL Query",
+        "Total Cost": float(cost) if cost else None,
+        "Plans": children,
+    }
+
+
+def _mysql_table_to_node(tbl: dict) -> dict:
+    cost_info = tbl.get("cost_info", {})
+    read_cost = cost_info.get("read_cost") or cost_info.get("prefix_cost")
+    return {
+        "Node Type": tbl.get("access_type", "table").upper(),
+        "Relation Name": tbl.get("table_name", "?"),
+        "Total Cost": float(read_cost) if read_cost else None,
+        "Plan Rows": tbl.get("rows_examined_per_scan"),
+        "Key": tbl.get("key"),
+        "Possible Keys": tbl.get("possible_keys"),
+        "Plans": [],
+    }
+
+
+def _mysql_warnings(plan: dict) -> list[dict]:
+    warnings = []
+    block = plan.get("query_block", {})
+    for key in ("table", "nested_loop"):
+        val = block.get(key)
+        if not val:
+            continue
+        tables = val if isinstance(val, list) else [{"table": val}]
+        for item in tables:
+            tbl = item.get("table") or item
+            access = tbl.get("access_type", "")
+            tname = tbl.get("table_name", "?")
+            if access == "ALL":
+                warnings.append({"type": "seq_scan", "node": "Full Scan", "relation": tname,
+                                  "message": f"Full table scan on '{tname}' — add an index on filter/join columns"})
+    return warnings
 
 
 def _safe_float(v) -> float | None:
