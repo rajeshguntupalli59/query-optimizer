@@ -97,6 +97,127 @@
     </div>
   </section>
 
+  <!-- ── Live demo: paste a query, get instant analysis ── -->
+  <section id="demo" class="px-6 py-24 border-t border-gray-800/50">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-3xl font-bold text-center mb-3">Try it right here</h2>
+      <p class="text-gray-400 text-center mb-10">Paste a slow query below — no signup, no database connection. This is a small taste of the built-in Query Rewriter.</p>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-3 border-b border-gray-800 bg-gray-900">
+          <span class="text-xs text-gray-500 font-mono">demo_query.sql</span>
+          <button onclick="loadSampleQuery()" class="text-xs text-blue-400 hover:text-blue-300 font-medium">Load a problem query</button>
+        </div>
+        <textarea id="demo-sql" rows="9" spellcheck="false"
+          class="w-full bg-gray-950 text-gray-200 font-mono text-sm p-5 outline-none resize-y placeholder-gray-700"
+          placeholder="SELECT * FROM orders WHERE ..."></textarea>
+        <div class="px-5 py-4 border-t border-gray-800 flex items-center justify-between bg-gray-900">
+          <p class="text-xs text-gray-600 hidden sm:block">Runs 100% in your browser — your SQL never leaves this page.</p>
+          <button onclick="analyzeDemoQuery()"
+            class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition shadow-lg shadow-blue-900/40">
+            Analyze query
+          </button>
+        </div>
+      </div>
+
+      <div id="demo-results" class="hidden mt-6 bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <div class="flex items-center gap-5 mb-6">
+          <div class="relative w-20 h-20 shrink-0">
+            <svg viewBox="0 0 80 80" class="w-20 h-20 -rotate-90">
+              <circle cx="40" cy="40" r="34" fill="none" stroke="#1f2937" stroke-width="8"/>
+              <circle id="demo-score-ring" cx="40" cy="40" r="34" fill="none" stroke="#22c55e" stroke-width="8"
+                stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="213.6" style="transition: stroke-dashoffset .8s ease, stroke .4s"/>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span id="demo-score" class="text-2xl font-extrabold text-white leading-none">–</span>
+            </div>
+          </div>
+          <div>
+            <p id="demo-grade" class="text-lg font-bold text-white"></p>
+            <p id="demo-summary" class="text-sm text-gray-400"></p>
+          </div>
+        </div>
+        <div id="demo-findings" class="space-y-3"></div>
+        <div class="mt-6 pt-5 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p class="text-sm text-gray-500">The full app adds EXPLAIN plans, index DDL, slow-query history and an AI assistant.</p>
+          <a href="#pricing" class="shrink-0 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition">Get QueryOptimizer Free</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+  const SAMPLE_QUERY = `SELECT *\nFROM orders o\nJOIN customers c ON c.id = o.customer_id\nWHERE UPPER(c.email) LIKE '%@gmail.com'\n  AND YEAR(o.order_date) = 2025\nORDER BY o.total DESC;`;
+
+  function loadSampleQuery() {
+    document.getElementById('demo-sql').value = SAMPLE_QUERY;
+    analyzeDemoQuery();
+  }
+
+  function analyzeDemoQuery() {
+    const sql = document.getElementById('demo-sql').value || '';
+    const up = sql.toUpperCase();
+    const findings = [];
+    const add = (sev, title, detail) => findings.push({ sev, title, detail });
+
+    if (/^\s*SELECT\s+\*/im.test(sql) || /\bSELECT\s+DISTINCT\s+\*/i.test(sql))
+      add('high', 'SELECT * fetches every column', 'Name only the columns you need. Wide rows bloat memory, network and sort buffers — especially painful with JOINs.');
+    if (/\bLIKE\s+['"]%/i.test(sql))
+      add('high', 'Leading wildcard in LIKE', "LIKE '%…' can't use a b-tree index — the engine scans. Use a full-text index or restructure the predicate.");
+    if (/\b(UPPER|LOWER|TRIM|LTRIM|RTRIM|YEAR|MONTH|DAY|DATE|CAST|CONVERT|SUBSTRING|SUBSTR|LEFT|RIGHT)\s*\(\s*[a-z_][\w.]*\s*\)/i.test(sql) && /\bWHERE\b/i.test(up))
+      add('medium', 'Function on a column in WHERE', 'Wrapping a column in a function makes the predicate non-sargable — indexes on that column are skipped. Compare against a computed constant instead.');
+    if (/\bWHERE\b[\s\S]*\bOR\b/i.test(up) && !/\bAND\b/i.test(up.split(/\bOR\b/i)[0].split(/\bWHERE\b/i)[1] || ''))
+      add('medium', 'OR across predicates', 'OR branches often defeat index seeks. A UNION ALL of two sargable queries frequently wins.');
+    if (/\bNOT\s+IN\s*\(\s*SELECT\b/i.test(up))
+      add('medium', 'NOT IN with a subquery', 'NOT IN returns nothing if the subquery yields a single NULL. NOT EXISTS is both safer and usually faster.');
+    if (/\(\s*SELECT\b/i.test(sql) && /^\s*SELECT\b/im.test(sql))
+      add('medium', 'Subquery inside the SELECT list', 'A correlated subquery in the SELECT list runs once per row. Rewrite as a JOIN or a CTE.');
+    if (/\bSELECT\s+DISTINCT\b/i.test(up) && !/\bSELECT\s+DISTINCT\s+\*/i.test(sql))
+      add('low', 'SELECT DISTINCT forces a sort', 'DISTINCT de-duplicates with a sort or hash. If the join keys already guarantee uniqueness, drop it.');
+    if (/\bORDER\s+BY\b/i.test(up) && !/\b(LIMIT|TOP|FETCH\s+FIRST)\b/i.test(up))
+      add('low', 'ORDER BY with no LIMIT', 'Sorting the entire result set when you only show the top N wastes work — add LIMIT / TOP.');
+    if (/^\s*(UPDATE|DELETE)\b/i.test(up) && !/\bWHERE\b/i.test(up))
+      add('critical', 'UPDATE/DELETE with no WHERE', 'This touches every row in the table. Almost never what you want — add a predicate.');
+    if (/\bOFFSET\s+\d+/i.test(up) && !/\bORDER\s+BY\b/i.test(up))
+      add('low', 'OFFSET without ORDER BY', 'Paging without a deterministic ORDER BY returns unstable pages. Order by a unique key.');
+
+    const cost = { critical: 30, high: 15, medium: 10, low: 5 };
+    let score = 100;
+    findings.forEach(f => score -= cost[f.sev] || 5);
+    score = Math.max(0, score);
+
+    const grade = score >= 90 ? ['Excellent', 'text-green-400', 'This query looks clean.'] :
+                  score >= 75 ? ['Good', 'text-green-300', 'Minor issues worth a look.'] :
+                  score >= 50 ? ['Needs work', 'text-yellow-400', 'Real performance risks found.'] :
+                                ['Critical', 'text-red-400', 'This query is likely slow — fix the items below.'];
+
+    const ring = document.getElementById('demo-score-ring');
+    const C = 213.6;
+    ring.style.strokeDashoffset = C - (C * score / 100);
+    ring.style.stroke = score >= 90 ? '#22c55e' : score >= 75 ? '#4ade80' : score >= 50 ? '#facc15' : '#f87171';
+    document.getElementById('demo-score').textContent = sql.trim() ? score : '–';
+    document.getElementById('demo-grade').innerHTML = sql.trim() ? `<span class="${grade[1]}">${grade[0]}</span>` : 'No query to analyze';
+    document.getElementById('demo-summary').textContent = sql.trim()
+      ? (findings.length ? `${findings.length} issue${findings.length > 1 ? 's' : ''} found — ${grade[2]}` : 'No common anti-patterns detected.')
+      : 'Paste a query above and hit Analyze.';
+
+    const badge = { critical: 'bg-red-500/15 text-red-300 border-red-500/30', high: 'bg-orange-500/15 text-orange-300 border-orange-500/30', medium: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30', low: 'bg-blue-500/15 text-blue-300 border-blue-500/30' };
+    document.getElementById('demo-findings').innerHTML = findings.length
+      ? findings.map(f => `
+        <div class="flex gap-4 p-4 bg-gray-950/70 border border-gray-800 rounded-xl">
+          <span class="shrink-0 h-fit text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-md border ${badge[f.sev]}">${f.sev}</span>
+          <div><p class="text-sm font-semibold text-gray-100">${f.title}</p>
+          <p class="text-sm text-gray-400 mt-1">${f.detail}</p></div>
+        </div>`).join('')
+      : (sql.trim() ? '<p class="text-sm text-gray-500">Nothing flagged — nice.</p>' : '');
+
+    const box = document.getElementById('demo-results');
+    box.classList.remove('hidden');
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  document.getElementById('demo-sql').value = SAMPLE_QUERY;
+  </script>
+
   <!-- ── Features ── -->
   <section id="features" class="px-6 py-24 border-t border-gray-800/50">
     <div class="max-w-6xl mx-auto">
