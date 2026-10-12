@@ -57,6 +57,14 @@ def _deduplicate(recs: list[dict]) -> list[dict]:
     return out
 
 
+def _tables_bare(sql: str) -> set[str]:
+    """Bare lowercased table names from SQL — 'shop.orders' and '[dbo].[orders]'
+    both become 'orders'. Used to match catalog (bare) names against whatever
+    qualification style the user's SQL uses."""
+    return {t.lower().replace("[", "").replace("]", "").split(".")[-1]
+            for t in _extract_tables(sql)}
+
+
 # ---------------------------------------------------------------------------
 # PostgreSQL
 # ---------------------------------------------------------------------------
@@ -108,14 +116,14 @@ def _pg_fk_without_index(cur, sql: str) -> list[dict]:
                 AND indexdef ILIKE '%' || kcu.column_name || '%'
           )
     """)
-    tables_in_sql = {t.lower() for t in _extract_tables(sql)}
+    tables_bare = _tables_bare(sql)
     recs = []
     for row in cur.fetchall():
         schema = row["table_schema"]
         tname  = row["table_name"]
         col    = row["column_name"]
         ftable = row["ftable"]
-        if tname.lower() in tables_in_sql or ftable.lower() in tables_in_sql:
+        if tname.lower() in tables_bare or ftable.lower() in tables_bare:
             recs.append({
                 "table": f"{schema}.{tname}", "columns": [col],
                 "reason": f"FK column '{col}' has no index — can cause slow joins",
@@ -214,11 +222,11 @@ def _mysql_fk_without_index(cursor, sql: str, conn) -> list[dict]:
                 AND s.SEQ_IN_INDEX = 1
           )
     """, (db_name,))
-    tables_in_sql = {t.lower() for t in _extract_tables(sql)}
+    tables_bare = _tables_bare(sql)
     recs = []
     for row in cursor.fetchall():
         tname, col, ref = row[0], row[1], row[2]
-        if tables_in_sql and tname.lower() not in tables_in_sql and ref.lower() not in tables_in_sql:
+        if tables_bare and tname.lower() not in tables_bare and ref.lower() not in tables_bare:
             continue
         recs.append({
             "table": f"{db_name}.{tname}", "columns": [col],
@@ -285,7 +293,7 @@ def _mssql_missing_index_dmv(cursor, sql: str) -> list[dict]:
     whenever it detects a missing index during compilation/execution.
     We surface the top entries for tables referenced in the user's SQL.
     """
-    tables_in_sql = {t.lower().lstrip("[").rstrip("]") for t in _extract_tables(sql)}
+    tables_bare = _tables_bare(sql)
     cursor.execute("""
         SELECT TOP 20
             d.statement                         AS full_table,
@@ -307,7 +315,7 @@ def _mssql_missing_index_dmv(cursor, sql: str) -> list[dict]:
         r = dict(zip(cols, row))
         full_table = (r["full_table"] or "").strip("[]").replace("].[", ".").replace("[", "")
         tname = full_table.split(".")[-1].lower()
-        if tables_in_sql and tname not in tables_in_sql:
+        if tables_bare and tname not in tables_bare:
             continue
         eq_cols   = [c.strip().strip("[]") for c in (r["equality_columns"]   or "").split(",") if c.strip()]
         ineq_cols = [c.strip().strip("[]") for c in (r["inequality_columns"] or "").split(",") if c.strip()]
@@ -330,7 +338,7 @@ def _mssql_missing_index_dmv(cursor, sql: str) -> list[dict]:
 
 
 def _mssql_fk_without_index(cursor, sql: str) -> list[dict]:
-    tables_in_sql = {t.lower().lstrip("[").rstrip("]") for t in _extract_tables(sql)}
+    tables_bare = _tables_bare(sql)
     cursor.execute("""
         SELECT
             OBJECT_SCHEMA_NAME(fk.parent_object_id)    AS schema_name,
@@ -349,7 +357,7 @@ def _mssql_fk_without_index(cursor, sql: str) -> list[dict]:
     """)
     recs = []
     for schema, tname, col in cursor.fetchall():
-        if tables_in_sql and tname.lower() not in tables_in_sql:
+        if tables_bare and tname.lower() not in tables_bare:
             continue
         recs.append({
             "table":    f"{schema}.{tname}",
