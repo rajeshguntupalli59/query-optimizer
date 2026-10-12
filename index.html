@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QueryOptimizer — Self-Hosted SQL Performance Workbench</title>
+  <meta name="description" content="Diagnose slow queries, find missing indexes, and rewrite inefficient SQL for PostgreSQL and SQL Server. Self-hosted. No cloud. Free forever." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gray: {
+              950: '#0a0a0f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    .gradient-text {
+      background: linear-gradient(135deg, #60a5fa, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .feature-card:hover { transform: translateY(-2px); }
+    .feature-card { transition: transform 0.2s ease; }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans antialiased">
+
+  <!-- ── Nav ── -->
+  <nav class="fixed top-0 left-0 right-0 z-50 border-b border-gray-800/60 bg-gray-950/90 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+        </div>
+        <span class="text-sm font-bold text-white tracking-tight">QueryOptimizer</span>
+        <span class="text-[10px] text-gray-600 font-medium mt-0.5">v1.0</span>
+      </div>
+      <div class="hidden md:flex items-center gap-6 text-xs text-gray-400">
+        <a href="#features" class="hover:text-white transition">Features</a>
+        <a href="#databases" class="hover:text-white transition">Databases</a>
+        <a href="#security" class="hover:text-white transition">Security</a>
+        <a href="#pricing" class="hover:text-white transition">Pricing</a>
+      </div>
+      <span class="text-xs font-semibold bg-green-900/40 border border-green-700/40 text-green-300 px-4 py-2 rounded-lg">
+        100% Free
+      </span>
+    </div>
+  </nav>
+
+  <!-- ── Hero ── -->
+  <section class="pt-32 pb-24 px-6 text-center">
+    <div class="max-w-4xl mx-auto">
+      <div class="inline-flex items-center gap-2 bg-blue-950/60 border border-blue-800/40 rounded-full px-4 py-1.5 mb-8">
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+        <span class="text-xs text-blue-300 font-medium">Self-hosted · No subscription · No cloud</span>
+      </div>
+      <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
+        Stop guessing why your<br />
+        <span class="gradient-text">SQL is slow</span>
+      </h1>
+      <p class="text-lg text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+        QueryOptimizer is a self-hosted workbench for DBAs and developers. Visualize execution plans, find missing indexes, surface slow queries, and rewrite bad SQL — for <strong class="text-gray-200">PostgreSQL and SQL Server</strong>, in the same tool.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="mailto:queryoptimizer78@gmail.com?subject=QueryOptimizer%20—%20free%20download" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-3.5 rounded-xl text-sm transition shadow-lg shadow-blue-900/40">
+          Get it Free
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+        <a href="#features" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white font-medium px-8 py-3.5 rounded-xl text-sm transition">
+          See all features
+        </a>
+      </div>
+      <p class="text-xs text-gray-600 mt-5">Free forever · Lifetime use · Installs in 5 minutes with Docker</p>
+    </div>
+  </section>
+
+  <!-- ── Screenshot placeholder ── -->
+  <section class="px-6 pb-20">
+    <div class="max-w-5xl mx-auto rounded-2xl border border-gray-800 bg-gray-900/60 overflow-hidden shadow-2xl shadow-black/60">
+      <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-800 bg-gray-900">
+        <div class="w-3 h-3 rounded-full bg-red-500/60"></div>
+        <div class="w-3 h-3 rounded-full bg-yellow-500/60"></div>
+        <div class="w-3 h-3 rounded-full bg-green-500/60"></div>
+        <span class="text-xs text-gray-600 ml-2">QueryOptimizer · EXPLAIN Visualizer</span>
+      </div>
+      <div>
+        <img src="screenshot.png" alt="QueryOptimizer EXPLAIN Visualizer" class="w-full" />
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Live demo: paste a query, get instant analysis ── -->
+  <section id="demo" class="px-6 py-24 border-t border-gray-800/50">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-3xl font-bold text-center mb-3">Try it right here</h2>
+      <p class="text-gray-400 text-center mb-10">Paste a slow query below — no signup, no database connection. This is a small taste of the built-in Query Rewriter.</p>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-3 border-b border-gray-800 bg-gray-900">
+          <span class="text-xs text-gray-500 font-mono">demo_query.sql</span>
+          <button onclick="loadSampleQuery()" class="text-xs text-blue-400 hover:text-blue-300 font-medium">Load a problem query</button>
+        </div>
+        <textarea id="demo-sql" rows="9" spellcheck="false"
+          class="w-full bg-gray-950 text-gray-200 font-mono text-sm p-5 outline-none resize-y placeholder-gray-700"
+          placeholder="SELECT * FROM orders WHERE ..."></textarea>
+        <div class="px-5 py-4 border-t border-gray-800 flex items-center justify-between bg-gray-900">
+          <p class="text-xs text-gray-600 hidden sm:block">Runs 100% in your browser — your SQL never leaves this page.</p>
+          <button onclick="analyzeDemoQuery()"
+            class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition shadow-lg shadow-blue-900/40">
+            Analyze query
+          </button>
+        </div>
+      </div>
+
+      <div id="demo-results" class="hidden mt-6 bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <div class="flex items-center gap-5 mb-6">
+          <div class="relative w-20 h-20 shrink-0">
+            <svg viewBox="0 0 80 80" class="w-20 h-20 -rotate-90">
+              <circle cx="40" cy="40" r="34" fill="none" stroke="#1f2937" stroke-width="8"/>
+              <circle id="demo-score-ring" cx="40" cy="40" r="34" fill="none" stroke="#22c55e" stroke-width="8"
+                stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="213.6" style="transition: stroke-dashoffset .8s ease, stroke .4s"/>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span id="demo-score" class="text-2xl font-extrabold text-white leading-none">–</span>
+            </div>
+          </div>
+          <div>
+            <p id="demo-grade" class="text-lg font-bold text-white"></p>
+            <p id="demo-summary" class="text-sm text-gray-400"></p>
+          </div>
+        </div>
+        <div id="demo-findings" class="space-y-3"></div>
+        <div class="mt-6 pt-5 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p class="text-sm text-gray-500">The full app adds EXPLAIN plans, index DDL, slow-query history and an AI assistant.</p>
+          <a href="#pricing" class="shrink-0 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition">Get QueryOptimizer Free</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+  const SAMPLE_QUERY = `SELECT *\nFROM orders o\nJOIN customers c ON c.id = o.customer_id\nWHERE UPPER(c.email) LIKE '%@gmail.com'\n  AND YEAR(o.order_date) = 2025\nORDER BY o.total DESC;`;
+
+  function loadSampleQuery() {
+    document.getElementById('demo-sql').value = SAMPLE_QUERY;
+    analyzeDemoQuery();
+  }
+
+  function analyzeDemoQuery() {
+    const sql = document.getElementById('demo-sql').value || '';
+    const up = sql.toUpperCase();
+    const findings = [];
+    const add = (sev, title, detail) => findings.push({ sev, title, detail });
+
+    if (/^\s*SELECT\s+\*/im.test(sql) || /\bSELECT\s+DISTINCT\s+\*/i.test(sql))
+      add('high', 'SELECT * fetches every column', 'Name only the columns you need. Wide rows bloat memory, network and sort buffers — especially painful with JOINs.');
+    if (/\bLIKE\s+['"]%/i.test(sql))
+      add('high', 'Leading wildcard in LIKE', "LIKE '%…' can't use a b-tree index — the engine scans. Use a full-text index or restructure the predicate.");
+    if (/\b(UPPER|LOWER|TRIM|LTRIM|RTRIM|YEAR|MONTH|DAY|DATE|CAST|CONVERT|SUBSTRING|SUBSTR|LEFT|RIGHT)\s*\(\s*[a-z_][\w.]*\s*\)/i.test(sql) && /\bWHERE\b/i.test(up))
+      add('medium', 'Function on a column in WHERE', 'Wrapping a column in a function makes the predicate non-sargable — indexes on that column are skipped. Compare against a computed constant instead.');
+    if (/\bWHERE\b[\s\S]*\bOR\b/i.test(up) && !/\bAND\b/i.test(up.split(/\bOR\b/i)[0].split(/\bWHERE\b/i)[1] || ''))
+      add('medium', 'OR across predicates', 'OR branches often defeat index seeks. A UNION ALL of two sargable queries frequently wins.');
+    if (/\bNOT\s+IN\s*\(\s*SELECT\b/i.test(up))
+      add('medium', 'NOT IN with a subquery', 'NOT IN returns nothing if the subquery yields a single NULL. NOT EXISTS is both safer and usually faster.');
+    if (/\(\s*SELECT\b/i.test(sql) && /^\s*SELECT\b/im.test(sql))
+      add('medium', 'Subquery inside the SELECT list', 'A correlated subquery in the SELECT list runs once per row. Rewrite as a JOIN or a CTE.');
+    if (/\bSELECT\s+DISTINCT\b/i.test(up) && !/\bSELECT\s+DISTINCT\s+\*/i.test(sql))
+      add('low', 'SELECT DISTINCT forces a sort', 'DISTINCT de-duplicates with a sort or hash. If the join keys already guarantee uniqueness, drop it.');
+    if (/\bORDER\s+BY\b/i.test(up) && !/\b(LIMIT|TOP|FETCH\s+FIRST)\b/i.test(up))
+      add('low', 'ORDER BY with no LIMIT', 'Sorting the entire result set when you only show the top N wastes work — add LIMIT / TOP.');
+    if (/^\s*(UPDATE|DELETE)\b/i.test(up) && !/\bWHERE\b/i.test(up))
+      add('critical', 'UPDATE/DELETE with no WHERE', 'This touches every row in the table. Almost never what you want — add a predicate.');
+    if (/\bOFFSET\s+\d+/i.test(up) && !/\bORDER\s+BY\b/i.test(up))
+      add('low', 'OFFSET without ORDER BY', 'Paging without a deterministic ORDER BY returns unstable pages. Order by a unique key.');
+
+    const cost = { critical: 30, high: 15, medium: 10, low: 5 };
+    let score = 100;
+    findings.forEach(f => score -= cost[f.sev] || 5);
+    score = Math.max(0, score);
+
+    const grade = score >= 90 ? ['Excellent', 'text-green-400', 'This query looks clean.'] :
+                  score >= 75 ? ['Good', 'text-green-300', 'Minor issues worth a look.'] :
+                  score >= 50 ? ['Needs work', 'text-yellow-400', 'Real performance risks found.'] :
+                                ['Critical', 'text-red-400', 'This query is likely slow — fix the items below.'];
+
+    const ring = document.getElementById('demo-score-ring');
+    const C = 213.6;
+    ring.style.strokeDashoffset = C - (C * score / 100);
+    ring.style.stroke = score >= 90 ? '#22c55e' : score >= 75 ? '#4ade80' : score >= 50 ? '#facc15' : '#f87171';
+    document.getElementById('demo-score').textContent = sql.trim() ? score : '–';
+    document.getElementById('demo-grade').innerHTML = sql.trim() ? `<span class="${grade[1]}">${grade[0]}</span>` : 'No query to analyze';
+    document.getElementById('demo-summary').textContent = sql.trim()
+      ? (findings.length ? `${findings.length} issue${findings.length > 1 ? 's' : ''} found — ${grade[2]}` : 'No common anti-patterns detected.')
+      : 'Paste a query above and hit Analyze.';
+
+    const badge = { critical: 'bg-red-500/15 text-red-300 border-red-500/30', high: 'bg-orange-500/15 text-orange-300 border-orange-500/30', medium: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30', low: 'bg-blue-500/15 text-blue-300 border-blue-500/30' };
+    document.getElementById('demo-findings').innerHTML = findings.length
+      ? findings.map(f => `
+        <div class="flex gap-4 p-4 bg-gray-950/70 border border-gray-800 rounded-xl">
+          <span class="shrink-0 h-fit text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-md border ${badge[f.sev]}">${f.sev}</span>
+          <div><p class="text-sm font-semibold text-gray-100">${f.title}</p>
+          <p class="text-sm text-gray-400 mt-1">${f.detail}</p></div>
+        </div>`).join('')
+      : (sql.trim() ? '<p class="text-sm text-gray-500">Nothing flagged — nice.</p>' : '');
+
+    const box = document.getElementById('demo-results');
+    box.classList.remove('hidden');
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  document.getElementById('demo-sql').value = SAMPLE_QUERY;
+  </script>
+
+  <!-- ── Features ── -->
+  <section id="features" class="px-6 py-24 border-t border-gray-800/50">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl font-bold mb-4">Everything you need to tune slow queries</h2>
+        <p class="text-gray-400 max-w-xl mx-auto">Six tools in one browser-based workbench. No agents, no SaaS, no data leaving your server.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+        <!-- EXPLAIN -->
+        <div class="feature-card bg-gray-900/60 border border-gray-800 rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-blue-950 border border-blue-800/40 flex items-center justify-center mb-4">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <h3 class="font-semibold text-white mb-2">EXPLAIN Visualizer</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Run EXPLAIN ANALYZE (PostgreSQL) or SET STATISTICS PROFILE ON (SQL Server) and see the plan as an interactive color-coded tree. Automatic warnings flag seq scans, row estimate drift, and expensive joins — no manual interpretation needed.</p>
+        </div>
+
+        <!-- Index Advisor -->
+        <div class="feature-card bg-gray-900/60 border border-gray-800 rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-green-950 border border-green-800/40 flex items-center justify-center mb-4">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+          </div>
+          <h3 class="font-semibold text-white mb-2">Index Advisor</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Paste any query and get a prioritized list of missing indexes backed by live catalog data — not guesswork. Each recommendation includes a ready-to-copy CREATE INDEX statement and an explanation of why it helps.</p>
+        </div>
+
+        <!-- Slow Query Dashboard -->
+        <div class="feature-card bg-gray-900/60 border border-gray-800 rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-orange-950 border border-orange-800/40 flex items-center justify-center mb-4">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3 class="font-semibold text-white mb-2">Slow Query Dashboard</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Surface your worst-performing queries ranked by average execution time. Reads from pg_stat_statements (PostgreSQL) or sys.dm_exec_query_stats (SQL Server). Filter, drill in, and reset stats with one click.</p>
+        </div>
+
+        <!-- Query Rewriter -->
+        <div class="feature-card bg-gray-900/60 border border-gray-800 rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-purple-950 border border-purple-800/40 flex items-center justify-center mb-4">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </div>
+          <h3 class="font-semibold text-white mb-2">Query Rewriter</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Catch anti-patterns before they hit production — no database connection needed. Detects SELECT *, OR in WHERE, functions on indexed columns, leading wildcards, NOT IN, large OFFSET, implicit cross joins, and more.</p>
+        </div>
+
+        <!-- AI Assistant -->
+        <div class="feature-card bg-gray-900/60 border border-purple-900/30 rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-purple-950 border border-purple-700/40 flex items-center justify-center mb-4">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+          </div>
+          <h3 class="font-semibold text-white mb-2">AI Assistant <span class="text-xs font-normal text-purple-400 ml-1">Bring Your Own Key</span></h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Connect your own AI — OpenAI, Anthropic, Ollama, or Azure OpenAI. Get a fully rewritten query with explanations, warnings, and tuning tips. Your API key stays encrypted on your server and never touches our infrastructure.</p>
+        </div>
+
+        <!-- Connection Manager -->
+        <div class="feature-card bg-gray-900/60 border border-gray-800 rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-teal-950 border border-teal-800/40 flex items-center justify-center mb-4">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+          </div>
+          <h3 class="font-semibold text-white mb-2">Multi-Connection Manager</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">Save and switch between multiple database connections. Credentials encrypted at rest with Fernet symmetric encryption. Supports PostgreSQL and SQL Server from the same interface, with a database-type badge on each connection.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Databases ── -->
+  <section id="databases" class="px-6 py-24 border-t border-gray-800/50">
+    <div class="max-w-4xl mx-auto text-center">
+      <h2 class="text-3xl font-bold mb-4">Works with your database</h2>
+      <p class="text-gray-400 mb-12">Full feature support for both PostgreSQL and SQL Server — including named instances, Windows Authentication, and Azure SQL.</p>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-gray-900/60 border border-blue-900/30 rounded-2xl p-8">
+          <div class="w-12 h-12 rounded-xl bg-blue-900/40 border border-blue-700/30 flex items-center justify-center mx-auto mb-4">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+          </div>
+          <h3 class="font-bold text-white text-lg mb-2">PostgreSQL</h3>
+          <p class="text-sm text-blue-400 font-medium mb-4">Versions 12 — 17</p>
+          <ul class="text-sm text-gray-400 space-y-1.5 text-left">
+            <li class="flex gap-2"><span class="text-green-500">✓</span> EXPLAIN ANALYZE with timing</li>
+            <li class="flex gap-2"><span class="text-green-500">✓</span> pg_stat_statements slow query tracking</li>
+            <li class="flex gap-2"><span class="text-green-500">✓</span> Live catalog index recommendations</li>
+            <li class="flex gap-2"><span class="text-green-500">✓</span> Un-indexed foreign key detection</li>
+          </ul>
+        </div>
+        <div class="bg-gray-900/60 border border-orange-900/30 rounded-2xl p-8">
+          <div class="w-12 h-12 rounded-xl bg-orange-900/40 border border-orange-700/30 flex items-center justify-center mx-auto mb-4">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+          </div>
+          <h3 class="font-bold text-white text-lg mb-2">Microsoft SQL Server</h3>
+          <p class="text-sm text-orange-400 font-medium mb-4">2016 · 2017 · 2019 · 2022 · Express · Azure SQL</p>
+          <ul class="text-sm text-gray-400 space-y-1.5 text-left">
+            <li class="flex gap-2"><span class="text-green-500">✓</span> SET STATISTICS PROFILE ON plans</li>
+            <li class="flex gap-2"><span class="text-green-500">✓</span> sys.dm_exec_query_stats slow queries</li>
+            <li class="flex gap-2"><span class="text-green-500">✓</span> sys.dm_db_missing_index_details</li>
+            <li class="flex gap-2"><span class="text-green-500">✓</span> Named instances + Windows Auth</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Security ── -->
+  <section id="security" class="px-6 py-24 border-t border-gray-800/50">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl font-bold mb-4">Built for self-hosting</h2>
+        <p class="text-gray-400">Your database credentials and query data never leave your server.</p>
+      </div>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="flex gap-4 bg-gray-900/40 border border-gray-800 rounded-xl p-5">
+          <div class="text-green-400 mt-0.5 shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div>
+            <p class="font-medium text-sm text-white mb-1">No cloud dependency</p>
+            <p class="text-xs text-gray-400">Zero outbound connections except to AI endpoints you configure. Your queries stay on your infrastructure.</p>
+          </div>
+        </div>
+        <div class="flex gap-4 bg-gray-900/40 border border-gray-800 rounded-xl p-5">
+          <div class="text-green-400 mt-0.5 shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div>
+            <p class="font-medium text-sm text-white mb-1">Encrypted credentials</p>
+            <p class="text-xs text-gray-400">Database passwords are encrypted with Fernet symmetric encryption before being written to the local SQLite database.</p>
+          </div>
+        </div>
+        <div class="flex gap-4 bg-gray-900/40 border border-gray-800 rounded-xl p-5">
+          <div class="text-green-400 mt-0.5 shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+          </div>
+          <div>
+            <p class="font-medium text-sm text-white mb-1">No telemetry</p>
+            <p class="text-xs text-gray-400">No usage data, error reports, or analytics are sent anywhere, ever.</p>
+          </div>
+        </div>
+        <div class="flex gap-4 bg-gray-900/40 border border-gray-800 rounded-xl p-5">
+          <div class="text-green-400 mt-0.5 shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <div>
+            <p class="font-medium text-sm text-white mb-1">Ships as Docker Compose</p>
+            <p class="text-xs text-gray-400">Single file, no external dependencies. Installs in 5 minutes on Windows, Linux, or macOS.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── How it installs ── -->
+  <section class="px-6 py-24 border-t border-gray-800/50">
+    <div class="max-w-3xl mx-auto text-center">
+      <h2 class="text-3xl font-bold mb-4">Up in 5 minutes</h2>
+      <p class="text-gray-400 mb-12">Requires Docker Desktop (Windows/Mac) or Docker Engine (Linux). That's it.</p>
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 text-left font-mono text-sm mb-8">
+        <p class="text-gray-500 mb-2"># 1. Extract the ZIP you received after purchase</p>
+        <p class="text-gray-200">unzip queryoptimizer-v1.0.zip</p>
+        <p class="text-gray-200">cd queryoptimizer</p>
+        <br/>
+        <p class="text-gray-500 mb-2"># 2. Run the installer</p>
+        <p class="text-gray-200"><span class="text-gray-500"># Windows:</span> powershell -ExecutionPolicy Bypass -File setup.ps1</p>
+        <p class="text-gray-200"><span class="text-gray-500"># Linux/macOS:</span> chmod +x setup.sh &amp;&amp; ./setup.sh</p>
+        <br/>
+        <p class="text-gray-500 mb-2"># 3. Open your browser</p>
+        <p class="text-blue-400">http://localhost:3000</p>
+      </div>
+      <p class="text-sm text-gray-500">Add a database connection, run your first EXPLAIN, done.</p>
+    </div>
+  </section>
+
+  <!-- ── Pricing ── -->
+  <section id="pricing" class="px-6 py-24 border-t border-gray-800/50">
+    <div class="max-w-xl mx-auto text-center">
+      <h2 class="text-3xl font-bold mb-4">Free forever</h2>
+      <p class="text-gray-400 mb-12">No price. No subscription. Yours to keep.</p>
+
+      <div class="bg-gray-900 border border-blue-800/40 rounded-2xl p-8 shadow-xl shadow-blue-950/20">
+        <div class="text-5xl font-extrabold text-white mb-1">Free</div>
+        <div class="text-sm text-gray-400 mb-8">free forever · no payment</div>
+
+        <ul class="text-sm text-gray-300 space-y-3 mb-8 text-left">
+          <li class="flex gap-3"><span class="text-green-400 font-bold">✓</span> All 6 features — EXPLAIN, Index Advisor, Slow Queries, Query Rewriter, AI Assistant, Connection Manager</li>
+          <li class="flex gap-3"><span class="text-green-400 font-bold">✓</span> PostgreSQL 12–17 + SQL Server 2016–2022 (including Express &amp; Azure SQL)</li>
+          <li class="flex gap-3"><span class="text-green-400 font-bold">✓</span> Lifetime use — free, forever</li>
+          <li class="flex gap-3"><span class="text-green-400 font-bold">✓</span> Installs in 5 minutes with Docker</li>
+          <li class="flex gap-3"><span class="text-green-400 font-bold">✓</span> Full documentation included</li>
+          <li class="flex gap-3"><span class="text-green-400 font-bold">✓</span> Email support for setup questions</li>
+        </ul>
+
+        <a href="mailto:queryoptimizer78@gmail.com?subject=QueryOptimizer%20—%20free%20download" class="block w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl text-base transition shadow-lg shadow-blue-900/40 mb-4">
+          Get QueryOptimizer Free
+        </a>
+        <p class="text-xs text-gray-600">Email us and we'll send you the download link</p>
+      </div>
+
+      <p class="text-sm text-gray-500 mt-6">Questions? <a href="mailto:queryoptimizer78@gmail.com" class="text-blue-400 hover:underline">Contact us</a> — we're happy to help.</p>
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="border-t border-gray-800/50 px-6 py-10">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+        </div>
+        <span class="text-sm font-semibold text-gray-400">QueryOptimizer v1.0</span>
+      </div>
+      <p class="text-xs text-gray-700">Free forever · No license key · No sign-up · <a href="mailto:queryoptimizer78@gmail.com" class="hover:text-gray-500 transition">Contact</a></p>
+    </div>
+  </footer>
+
+</body>
+</html>
