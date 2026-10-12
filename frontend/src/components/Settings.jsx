@@ -187,8 +187,8 @@ export default function Settings() {
             {[
               ['Product',  'QueryOptimizer'],
               ['Version',  '1.0.0'],
-              ['License',  'Commercial — Self-Hosted'],
-              ['Support',  'Included with purchase'],
+              ['License',  'Free forever — no key needed'],
+              ['Support',  'Free — email us anytime'],
             ].map(([k, v]) => (
               <div key={k} className="contents">
                 <span className="text-gray-600">{k}</span>
