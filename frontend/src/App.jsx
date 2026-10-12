@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import ConnectionManager from './components/ConnectionManager'
-import Activate from './components/Activate'
 import ExplainPlan from './components/ExplainPlan'
 import IndexAdvisor from './components/IndexAdvisor'
 import SlowQueries from './components/SlowQueries'
@@ -26,17 +25,9 @@ const DB_COLOR = { postgres: 'bg-blue-500', mssql: 'bg-orange-500' }
 const DB_LABEL = { postgres: 'PostgreSQL',  mssql: 'SQL Server'    }
 
 export default function App() {
-  const [licensed, setLicensed]         = useState(null)   // null = loading
   const [selectedConn, setSelectedConn] = useState(null)
   const [activeTab, setActiveTab]       = useState(null)
   const [sidebarOpen, setSidebarOpen]   = useState(true)
-
-  useEffect(() => {
-    fetch('/api/license')
-      .then(r => r.json())
-      .then(d => setLicensed(d.activated))
-      .catch(() => setLicensed(false))
-  }, [])
 
   const active = TABS.find(t => t.id === activeTab)
   const ActiveComponent = active?.component
@@ -56,14 +47,6 @@ export default function App() {
 
   const showWelcome = !activeTab || (!selectedConn && active?.needsConn)
   const showSettings = activeTab === 'settings'
-
-  if (licensed === null) return (
-    <div className="h-screen bg-gray-950 flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-    </div>
-  )
-
-  if (!licensed) return <Activate onActivated={() => setLicensed(true)} />
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gray-950 text-gray-100">
