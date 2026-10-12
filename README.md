@@ -1,8 +1,16 @@
 # QueryOptimizer
 
-**A self-hosted SQL performance workbench for PostgreSQL and Microsoft SQL Server DBAs.**
+**A free, self-hosted SQL performance workbench for PostgreSQL and Microsoft SQL Server DBAs.**
 
-QueryOptimizer gives your team a single browser-based tool to diagnose slow queries, find missing indexes, and rewrite inefficient SQL — without sending your data outside your infrastructure.
+QueryOptimizer gives your team a single browser-based tool to diagnose slow queries, find missing indexes, and rewrite inefficient SQL — without sending your data outside your infrastructure. 100% free, no signup, no license key.
+
+## Demo
+
+Watch the 13-second tour (the interactive demo on the website analyzes a slow query right in your browser):
+
+<video src="https://rajeshguntupalli59.github.io/query-optimizer/demo.mp4" controls preload="metadata"></video>
+
+Or try it live: paste a query into the analyzer at https://rajeshguntupalli59.github.io/query-optimizer/ — no signup, no database connection needed.
 
 ---
 
@@ -13,6 +21,9 @@ Run `EXPLAIN` or `EXPLAIN ANALYZE` (PostgreSQL) and `SET SHOWPLAN_ALL ON` (SQL S
 
 ### Index Advisor
 Paste any SQL query and get a prioritized list of missing indexes backed by live catalog data — not guesswork. Each recommendation comes with a ready-to-copy `CREATE INDEX` statement and an explanation of why it helps. For SQL Server, recommendations also pull from `sys.dm_db_missing_index_details`.
+
+### Index Impact Test
+Don't guess — measure. Click **Test impact** on any recommendation and QueryOptimizer creates the index in a transaction-safe way, runs `EXPLAIN ANALYZE` before and after, then drops the index and shows you the exact runtime improvement (e.g. "6.7 ms → 0.04 ms, 99.4% faster"). PostgreSQL only.
 
 ### Slow Query Dashboard
 Surface your worst-performing queries ranked by average execution time. Pulls from `pg_stat_statements` (PostgreSQL) or `sys.dm_exec_query_stats` (SQL Server). Filter by minimum call count, reset statistics, and drill into timing details per query.
@@ -93,8 +104,7 @@ See [docs/QUICK_START.md](docs/QUICK_START.md) for a 5-minute setup guide and [d
 
 ## License
 
-Commercial self-hosted license. See [LICENSE](LICENSE) for full terms.
-One license per installation. The client is responsible for all use of the software after delivery.
+Free. Use it, share it, run it on as many servers as you like. The client is responsible for all database changes made using this tool. The software is provided as-is with no warranty.
 
 ---
 

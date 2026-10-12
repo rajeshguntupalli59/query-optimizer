@@ -266,6 +266,17 @@ Each card shows:
 
 Click **Copy** on the DDL block, review the statement, and run it in your database client during a maintenance window.
 
+### Testing impact before you commit (PostgreSQL)
+
+Instead of guessing whether an index will help, click **Test impact** on any recommendation. QueryOptimizer will:
+
+1. Run `EXPLAIN ANALYZE` on your query and record the baseline runtime and plan
+2. Create the recommended index as a temporary index
+3. Run `EXPLAIN ANALYZE` again and compare
+4. Drop the temporary index — your database is left exactly as it was
+
+You get a before/after report: runtime, plan node (e.g. `Seq Scan` → `Bitmap Heap Scan`), plan cost, and the percentage improvement (e.g. "6.7 ms → 0.04 ms — 99.4% faster").
+
 > **Important:** Always test index changes on a non-production copy first. Creating an index on a large table acquires a brief write lock.
 
 ---
