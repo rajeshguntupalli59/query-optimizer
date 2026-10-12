@@ -15,6 +15,7 @@ export const explain = {
 
 export const indexes = {
   recommend: (body) => api.post('/indexes/recommend', body).then(r => r.data),
+  testImpact: (body) => api.post('/indexes/test-impact', body).then(r => r.data),
 }
 
 export const slowQueries = {

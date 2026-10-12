@@ -119,35 +119,61 @@ def _pg_fk_without_index(cur, sql: str) -> list[dict]:
             recs.append({
                 "table": f"{schema}.{tname}", "columns": [col],
                 "reason": f"FK column '{col}' has no index — can cause slow joins",
-                "ddl": f"CREATE INDEX ON {schema}.{tname} ({col});",
+                "ddl": f"CREATE INDEX {_pg_index_name(tname, col)} ON {schema}.{tname} ({col});",
                 "estimated_benefit": "Medium-High",
             })
     return recs
 
 
+# Tokens that look like columns to the naive regexes below but are actually
+# SQL keywords or literals — never recommend indexes on these.
+_SQL_KEYWORDS = frozenset({
+    "AND", "OR", "NOT", "NULL", "TRUE", "FALSE", "EXISTS", "BETWEEN", "LIKE",
+    "IN", "IS", "AS", "ON", "DISTINCT", "CASE", "WHEN", "THEN", "ELSE", "END",
+    "SELECT", "FROM", "WHERE", "JOIN", "INNER", "LEFT", "RIGHT", "FULL",
+    "CROSS", "UNION", "ALL", "ORDER", "BY", "GROUP", "HAVING", "LIMIT", "OFFSET",
+})
+
+
+def _is_real_column(col: str) -> bool:
+    return bool(col) and not col.isdigit() and col not in _SQL_KEYWORDS
+
+
+def _pg_index_name(tname: str, col: str) -> str:
+    """Deterministic, safe index name for advisor-generated DDL."""
+    safe = re.sub(r"\W", "_", f"ix_{tname}_{col}".lower())
+    return safe[:60]
+
+
 def _pg_infer_from_sql(cur, sql: str) -> list[dict]:
     recs = []
     upper = sql.upper()
-    where_cols = re.findall(r'WHERE\s+\w+\.(\w+)\s*[=<>!]', upper)
-    order_cols  = re.findall(r'ORDER\s+BY\s+\w+\.(\w+)', upper)
+    where_cols = re.findall(r'WHERE\s+(?:\w+\.)?(\w+)\s*[=<>!]', upper)
+    order_cols  = re.findall(r'ORDER\s+BY\s+(?:\w+\.)?(\w+)', upper)
     tables = _extract_tables(sql)
     if not tables:
         return recs
     schema, tname = _split_schema_pg(tables[0])
     for col in set(where_cols):
+        if not _is_real_column(col):
+            continue
         if not _pg_index_exists(cur, schema, tname, col.lower()):
+            idx = _pg_index_name(tname, col.lower())
             recs.append({
                 "table": f"{schema}.{tname}", "columns": [col.lower()],
                 "reason": f"WHERE column '{col.lower()}' has no index",
-                "ddl": f"CREATE INDEX ON {schema}.{tname} ({col.lower()});",
+                "ddl": f"CREATE INDEX {idx} ON {schema}.{tname} ({col.lower()});",
                 "estimated_benefit": "High",
             })
     for col in set(order_cols):
+        if not _is_real_column(col):
+            continue
         if not _pg_index_exists(cur, schema, tname, col.lower()):
+            idx = _pg_index_name(tname, col.lower())
             recs.append({
                 "table": f"{schema}.{tname}", "columns": [col.lower()],
                 "reason": f"ORDER BY column '{col.lower()}' has no index",
-                "ddl": f"CREATE INDEX ON {schema}.{tname} ({col.lower()});",
+                "ddl": f"CREATE INDEX {idx} ON {schema}.{tname} ({col.lower()});",
                 "estimated_benefit": "Medium",
             })
     return recs
@@ -345,6 +371,8 @@ def _mssql_infer_from_sql(cursor, sql: str) -> list[dict]:
         return recs
     schema, tname = _split_schema_mssql(tables[0])
     for col in set(where_cols):
+        if not _is_real_column(col):
+            continue
         if not _mssql_index_exists(cursor, schema, tname, col):
             recs.append({
                 "table":    f"{schema}.{tname}",
@@ -354,6 +382,8 @@ def _mssql_infer_from_sql(cursor, sql: str) -> list[dict]:
                 "estimated_benefit": "High",
             })
     for col in set(order_cols):
+        if not _is_real_column(col):
+            continue
         if not _mssql_index_exists(cursor, schema, tname, col):
             recs.append({
                 "table":    f"{schema}.{tname}",
@@ -376,3 +406,95 @@ def _mssql_index_exists(cursor, schema: str, table: str, column: str) -> bool:
           AND c.name = ?
     """, (schema, table, column))
     return cursor.fetchone() is not None
+
+
+# ---------------------------------------------------------------------------
+# Index impact test — create the recommended index, measure before/after,
+# then drop it again. PostgreSQL only for now.
+# ---------------------------------------------------------------------------
+
+_INDEX_NAME_RE = re.compile(
+    r'CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?'
+    r'["\']?([\w$]+)["\']?\s+ON',
+    re.IGNORECASE,
+)
+
+
+def _pg_explain_stats(conn, sql: str) -> dict:
+    """Return execution time (ms) and total cost for a SELECT via EXPLAIN ANALYZE."""
+    with conn.cursor() as cur:
+        cur.execute(f"EXPLAIN (ANALYZE, FORMAT JSON) {sql}")
+        plan = cur.fetchone()[0]
+    if isinstance(plan, str):
+        import json as _json
+        plan = _json.loads(plan)
+    root = plan[0].get("Plan", {})
+    return {
+        "execution_ms": root.get("Actual Total Time"),
+        "total_cost":   root.get("Total Cost"),
+        "node_type":    root.get("Node Type"),
+    }
+
+
+def test_index_impact(conn_id: str, ddl: str, sql: str) -> dict:
+    """
+    Measure a query before and after creating the recommended index,
+    then drop the index. Returns the comparison.
+    """
+    first_word = (sql or "").strip().split(None, 1)
+    if not first_word or first_word[0].upper() not in ("SELECT", "WITH"):
+        raise ValueError("Impact test only runs SELECT/WITH queries (it executes them).")
+    if not (ddl or "").strip().upper().startswith("CREATE"):
+        raise ValueError("No CREATE INDEX statement to test.")
+
+    m = _INDEX_NAME_RE.search(ddl)
+    if m:
+        index_name = m.group(1)
+    else:
+        # DDL without an explicit name (e.g. "CREATE INDEX ON t (c)") —
+        # generate one so we can drop it afterwards.
+        import secrets as _secrets
+        index_name = f"qo_impact_{_secrets.token_hex(4)}"
+        ddl = re.sub(r"CREATE(\s+UNIQUE)?\s+INDEX\s+",
+                     rf"CREATE\1 INDEX {index_name} ", ddl,
+                     count=1, flags=re.IGNORECASE)
+
+    # Schema-qualify the DROP: the index lives in the table's schema, which is
+    # usually not on the search_path, so an unqualified DROP would miss it.
+    on_m = re.search(r"\bON\s+(?:\"?([\w$]+)\"?\.)?\"?([\w$]+)\"?", ddl, re.IGNORECASE)
+    idx_schema = on_m.group(1) if on_m else None
+    drop_target = f'"{idx_schema}"."{index_name}"' if idx_schema else f'"{index_name}"'
+
+    conn, adapter, cfg = open_connection(conn_id)
+    try:
+        if cfg["db_type"] != "postgres":
+            raise ValueError("Impact test is currently supported for PostgreSQL only.")
+        conn.autocommit = True
+        before = _pg_explain_stats(conn, sql)
+        with conn.cursor() as cur:
+            cur.execute(ddl)
+        try:
+            after = _pg_explain_stats(conn, sql)
+        finally:
+            with conn.cursor() as cur:
+                cur.execute(f"DROP INDEX IF EXISTS {drop_target}")
+    finally:
+        conn.close()
+
+    b_ms, a_ms = before["execution_ms"], after["execution_ms"]
+    improvement = None
+    if isinstance(b_ms, (int, float)) and isinstance(a_ms, (int, float)) and b_ms > 0:
+        improvement = round((b_ms - a_ms) / b_ms * 100, 1)
+
+    return {
+        "index": index_name,
+        "before": before,
+        "after": after,
+        "improvement_pct": improvement,
+        "plan_changed": before["node_type"] != after["node_type"],
+        "verdict": (
+            "faster" if improvement is not None and improvement > 10 else
+            "no meaningful change" if improvement is not None else
+            "could not measure"
+        ),
+    }
