@@ -334,3 +334,111 @@ DROP DATABASE shopdb;
 | Slow Queries | Real execution history ranked by mean time |
 | Query Rewriter | 6 anti-patterns caught without touching the database |
 | AI Assistant | Full query rewrite with explanations |
+
+---
+
+# Appendix A — Testing against SQL Server
+
+Everything above uses PostgreSQL, but QueryOptimizer speaks T-SQL too.
+This appendix gets you a live SQL Server test database in about five minutes.
+
+## A0 — Prerequisites (one time)
+
+The backend connects through **pyodbc**, so the machine running the
+QueryOptimizer backend needs Microsoft's ODBC driver:
+
+- **Windows:** install **ODBC Driver 18 for SQL Server** from
+  https://learn.microsoft.com/sql/connect/odbc/download-odbc-driver-for-sql-server
+  (Driver 17 works too — the app auto-detects any installed SQL Server driver).
+- Make sure `pyodbc` is installed: `pip install -r backend/requirements.txt`
+
+## A1 — Start SQL Server in Docker
+
+```bash
+docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Test1234!" -p 1433:1433 \
+  --name mssql-test -d mcr.microsoft.com/mssql/server:2022-latest
+```
+
+Wait ~30 seconds for it to come up, then load the seed data
+(`docs/mssql-test-data.sql` — same shop schema as the Postgres script,
+with deliberately missing indexes):
+
+**Option 1 — GUI (SSMS / Azure Data Studio):** open the file, connect to
+`localhost,1433` as `sa` / `Test1234!`, press F5.
+
+**Option 2 — docker exec:**
+```bash
+docker cp docs/mssql-test-data.sql mssql-test:/tmp/seed.sql
+docker exec -i mssql-test /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P "Test1234!" -C -i /tmp/seed.sql
+```
+
+## A2 — Add the connection in QueryOptimizer
+
+1. Open the app, click **New** in the sidebar
+2. Select **SQL Server**
+3. Enter:
+
+| Field    | Value      |
+|----------|------------|
+| Host     | `localhost` |
+| Port     | `1433`     |
+| Database | `shopdb`   |
+| Username | `sa`       |
+| Password | `Test1234!` |
+
+4. Click **Save**, then the **✓ checkmark** to test the connection.
+   (Leave username empty to use Windows trusted authentication instead.)
+
+## A3 — What to verify (5-minute checklist)
+
+**Schema scan** — the Schema tab should list 4 tables (`customers`,
+`products`, `orders`, `order_items`), their columns and types, the three
+foreign keys, and row counts.
+
+**Index Advisor** — paste this (note the `dbo.` prefixes — this exercises
+the schema-qualified matching fix):
+
+```sql
+SELECT c.first_name, c.last_name, COUNT(o.id) AS order_count
+FROM dbo.customers c
+JOIN dbo.orders o ON o.customer_id = c.id
+WHERE c.country = 'US' AND o.status = 'delivered'
+GROUP BY c.first_name, c.last_name;
+```
+
+Expect recommendations including `ix_orders_customer_id` (unindexed
+foreign key) and `ix_orders_status` / `ix_customers_country`. The advisor
+combines three sources on SQL Server: the missing-index DMVs
+(`sys.dm_db_missing_index_*`), the foreign-key check, and predicate
+inference. (The seed script already ran warm-up queries so the DMVs
+have data; run any query a couple of times first if the DMV source is
+quiet on a brand-new container.)
+
+**Query Rewriter** — paste:
+
+```sql
+SELECT * FROM dbo.customers WHERE UPPER(email) = 'USER42@EXAMPLE.COM';
+```
+
+Expect flags for `SELECT *` and the function-on-column predicate
+(which blocks index use).
+
+**EXPLAIN** — paste any SELECT and click EXPLAIN. On SQL Server this runs
+`SET SHOWPLAN_ALL ON`, i.e. an **estimated** plan — it does not execute
+your query, so it's safe on production-shaped data.
+
+**Slow Queries** — run a few queries first (a fresh container has no
+history), then open the Slow Queries tab. It reads
+`sys.dm_exec_query_stats`, which is always available — no extension to
+enable, unlike Postgres' `pg_stat_statements`.
+
+> **Known limitation:** the Index **Impact Test** ("test this index"
+> button) currently supports PostgreSQL only — on SQL Server it returns a
+> clear error instead of a measurement. Everything else above works.
+
+## A4 — Cleanup
+
+```bash
+docker stop mssql-test && docker rm mssql-test
+```
