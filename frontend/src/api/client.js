@@ -27,6 +27,14 @@ export const rewriter = {
   analyze: (sql) => api.post('/rewrite', { sql }).then(r => r.data),
 }
 
+export const workload = {
+  list:    ()     => api.get('/workload').then(r => r.data),
+  get:     (id)   => api.get(`/workload/${id}`).then(r => r.data),
+  remove:  (id)   => api.delete(`/workload/${id}`),
+  capture: (body)  => api.post('/workload/capture', body).then(r => r.data),
+  replay:  (body)  => api.post('/workload/replay', body).then(r => r.data),
+}
+
 export const aiAssistant = {
   analyze:    (body)  => api.post('/ai/analyze', body).then(r => r.data),
   getConfig:  ()      => api.get('/ai/config').then(r => r.data),

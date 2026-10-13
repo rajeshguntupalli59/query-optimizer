@@ -75,7 +75,69 @@ def _pg_recommend(conn, sql: str) -> list[dict]:
         recs.extend(_pg_unindexed_tables(cur, sql))
         recs.extend(_pg_fk_without_index(cur, sql))
         recs.extend(_pg_infer_from_sql(cur, sql))
+        recs.extend(_pg_index_hygiene(cur, sql))
     return _deduplicate(recs)
+
+
+def _pg_index_hygiene(cur, sql: str) -> list[dict]:
+    """Find unused and duplicate indexes on tables referenced by the SQL."""
+    tables_bare = _tables_bare(sql)
+    recs = []
+    # Unused: non-PK, non-unique indexes with zero scans
+    cur.execute("""
+        SELECT s.schemaname, s.relname AS tablename, s.indexrelname AS indexname,
+               pg_relation_size(s.indexrelid) AS bytes
+        FROM pg_stat_user_indexes s
+        JOIN pg_index i ON i.indexrelid = s.indexrelid
+        WHERE s.idx_scan = 0 AND NOT i.indisunique AND NOT i.indisprimary
+    """)
+    for r in cur.fetchall():
+        if tables_bare and r["tablename"].lower() not in tables_bare:
+            continue
+        kb = (r["bytes"] or 0) // 1024
+        recs.append({
+            "table": f"{r['schemaname']}.{r['tablename']}",
+            "columns": [r["indexname"]],
+            "reason": f"Index '{r['indexname']}' has never been scanned — dead weight on writes"
+                      + (f" ({kb} KB reclaimable)" if kb else ""),
+            "ddl": f"DROP INDEX {r['schemaname']}.{r['indexname']};",
+            "estimated_benefit": "Medium — faster writes, less disk",
+        })
+    # Duplicates: same table + same leading column list, different names
+    cur.execute("""
+        SELECT schemaname, tablename, indexname, indexdef
+        FROM pg_indexes
+        WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
+    """)
+    seen: dict[tuple, list] = {}
+    for r in cur.fetchall():
+        indexdef = r["indexdef"] or ""
+        if "((" in indexdef:
+            continue  # expression index — leave alone
+        m = re.search(r"\(\s*([^()]+?)\s*\)", indexdef)
+        if not m:
+            continue
+        cols = ",".join(c.strip().strip('"').split()[0] for c in m.group(1).split(","))
+        inc = re.search(r"INCLUDE\s*\(([^)]+)\)", indexdef, re.I)
+        key_cols = cols + ("+inc:" + inc.group(1) if inc else "")
+        key = (r["schemaname"], r["tablename"], key_cols)
+        seen.setdefault(key, []).append(r["indexname"])
+    for (schema, table, key_cols), names in seen.items():
+        if len(names) < 2:
+            continue
+        if tables_bare and table.lower() not in tables_bare:
+            continue
+        cols = key_cols.split("+inc:")[0]
+        keep, *dupes = sorted(names)
+        for d in dupes:
+            recs.append({
+                "table": f"{schema}.{table}",
+                "columns": [d],
+                "reason": f"Duplicate of '{keep}' on ({cols}) — same columns, extra write cost",
+                "ddl": f"DROP INDEX {schema}.{d};",
+                "estimated_benefit": "Medium — faster writes, less disk",
+            })
+    return recs
 
 
 def _pg_unindexed_tables(cur, sql: str) -> list[dict]:
@@ -284,7 +346,78 @@ def _mssql_recommend(conn, sql: str) -> list[dict]:
     recs.extend(_mssql_missing_index_dmv(cursor, sql))
     recs.extend(_mssql_fk_without_index(cursor, sql))
     recs.extend(_mssql_infer_from_sql(cursor, sql))
+    recs.extend(_mssql_index_hygiene(cursor, sql))
     return _deduplicate(recs)
+
+
+def _mssql_index_hygiene(cursor, sql: str) -> list[dict]:
+    """Unused and duplicate indexes on tables referenced by the SQL."""
+    tables_bare = _tables_bare(sql)
+    recs = []
+    # Unused: no user seeks/scans/lookups, not PK/unique
+    cursor.execute("""
+        SELECT OBJECT_SCHEMA_NAME(i.object_id) AS schema_name,
+               OBJECT_NAME(i.object_id) AS table_name,
+               i.name AS index_name
+        FROM sys.indexes i
+        LEFT JOIN sys.dm_db_index_usage_stats u
+          ON u.object_id = i.object_id AND u.index_id = i.index_id
+         AND u.database_id = DB_ID()
+        WHERE i.type_desc IN ('NONCLUSTERED', 'CLUSTERED')
+          AND i.is_primary_key = 0 AND i.is_unique = 0
+          AND COALESCE(u.user_seeks, 0) + COALESCE(u.user_scans, 0)
+              + COALESCE(u.user_lookups, 0) = 0
+    """)
+    cols = [d[0] for d in cursor.description]
+    for row in cursor.fetchall():
+        r = dict(zip(cols, row))
+        if not r["index_name"]:
+            continue
+        if tables_bare and r["table_name"].lower() not in tables_bare:
+            continue
+        recs.append({
+            "table": f"{r['schema_name']}.{r['table_name']}",
+            "columns": [r["index_name"]],
+            "reason": f"Index '{r['index_name']}' has no user seeks/scans — dead weight on writes",
+            "ddl": f"DROP INDEX [{r['index_name']}] ON [{r['schema_name']}].[{r['table_name']}];",
+            "estimated_benefit": "Medium — faster writes, less disk",
+        })
+    # Duplicates: same key columns, different names
+    cursor.execute("""
+        SELECT OBJECT_SCHEMA_NAME(i.object_id) AS schema_name,
+               OBJECT_NAME(i.object_id) AS table_name,
+               i.name AS index_name,
+               STRING_AGG(COL_NAME(ic.object_id, ic.column_id), ',')
+                   WITHIN GROUP (ORDER BY ic.key_ordinal) AS cols
+        FROM sys.indexes i
+        JOIN sys.index_columns ic
+          ON ic.object_id = i.object_id AND ic.index_id = i.index_id
+         AND ic.is_included_column = 0
+        WHERE i.name IS NOT NULL
+        GROUP BY OBJECT_SCHEMA_NAME(i.object_id), OBJECT_NAME(i.object_id),
+                 i.name, i.object_id, i.index_id
+    """)
+    cols = [d[0] for d in cursor.description]
+    seen: dict[tuple, list] = {}
+    for row in cursor.fetchall():
+        r = dict(zip(cols, row))
+        key = (r["schema_name"], r["table_name"], r["cols"])
+        seen.setdefault(key, []).append(r["index_name"])
+    for (schema, table, collist), names in seen.items():
+        if len(names) < 2:
+            continue
+        if tables_bare and table.lower() not in tables_bare:
+            continue
+        keep, *dupes = sorted(names)
+        for d in dupes:
+            recs.append({
+                "table": f"{schema}.{table}",
+                "columns": [d],
+                "reason": f"Duplicate of '{keep}' on ({collist}) — same columns, extra write cost",
+                "ddl": f"DROP INDEX [{d}] ON [{schema}].[{table}];",
+                "estimated_benefit": "Medium — faster writes, less disk",
+            })
+    return recs
 
 
 def _mssql_missing_index_dmv(cursor, sql: str) -> list[dict]:

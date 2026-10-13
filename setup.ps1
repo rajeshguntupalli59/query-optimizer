@@ -1,11 +1,11 @@
-# QueryOptimizer — Windows Setup Script
+# QueryLab — Windows Setup Script
 # Run with: powershell -ExecutionPolicy Bypass -File setup.ps1
 
 $ErrorActionPreference = "Stop"
 
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "  QueryOptimizer — Installation" -ForegroundColor Cyan
+Write-Host "  QueryLab — Installation" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -49,12 +49,12 @@ Write-Host "Building containers (this may take a few minutes on first run)..." -
 docker compose build
 
 Write-Host ""
-Write-Host "Starting QueryOptimizer..." -ForegroundColor Cyan
+Write-Host "Starting QueryLab..." -ForegroundColor Cyan
 docker compose up -d
 
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Green
-Write-Host "  QueryOptimizer is running!" -ForegroundColor Green
+Write-Host "  QueryLab is running!" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "  App:  http://localhost:3000" -ForegroundColor White

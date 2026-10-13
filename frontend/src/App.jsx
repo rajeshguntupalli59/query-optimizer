@@ -4,11 +4,12 @@ import ExplainPlan from './components/ExplainPlan'
 import IndexAdvisor from './components/IndexAdvisor'
 import SlowQueries from './components/SlowQueries'
 import QueryRewriter from './components/QueryRewriter'
+import WorkloadReplay from './components/WorkloadReplay'
 import AiAssistant from './components/AiAssistant'
 import Settings from './components/Settings'
 import Welcome from './components/Welcome'
 import {
-  Database, Zap, Search, Clock, Wand2,
+  Database, Zap, Search, Clock, Wand2, Repeat,
   ChevronLeft, ChevronRight, LayoutDashboard,
   Sparkles, Settings2,
 } from 'lucide-react'
@@ -16,6 +17,7 @@ import {
 const TABS = [
   { id: 'explain',  label: 'EXPLAIN',       icon: Zap,        component: ExplainPlan,  needsConn: true  },
   { id: 'indexes',  label: 'Index Advisor',  icon: Search,     component: IndexAdvisor, needsConn: true  },
+  { id: 'workload', label: 'Workload Replay',icon: Repeat,     component: WorkloadReplay, needsConn: true  },
   { id: 'slow',     label: 'Slow Queries',   icon: Clock,      component: SlowQueries,  needsConn: true  },
   { id: 'rewrite',  label: 'Query Rewriter', icon: Wand2,      component: QueryRewriter,needsConn: false },
   { id: 'ai',       label: 'AI Assistant',   icon: Sparkles,   component: AiAssistant,  needsConn: false },
@@ -58,8 +60,8 @@ export default function App() {
             <Database size={14} className="text-white" />
           </div>
           <div className="leading-none">
-            <p className="text-sm font-bold text-white tracking-tight group-hover:text-blue-300 transition">QueryOptimizer</p>
-            <p className="text-[10px] text-gray-500 font-medium">v1.0 · DBA Workbench</p>
+            <p className="text-sm font-bold text-white tracking-tight group-hover:text-blue-300 transition">QueryLab</p>
+            <p className="text-[10px] text-gray-500 font-medium">v1.1 · DBA Workbench</p>
           </div>
         </button>
 

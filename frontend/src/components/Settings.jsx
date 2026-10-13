@@ -185,7 +185,7 @@ export default function Settings() {
         <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5 flex flex-col gap-3 text-xs text-gray-500">
           <div className="grid grid-cols-2 gap-y-2">
             {[
-              ['Product',  'QueryOptimizer'],
+              ['Product',  'QueryLab'],
               ['Version',  '1.0.0'],
               ['License',  'Free forever — no key needed'],
               ['Support',  'Free — email us anytime'],

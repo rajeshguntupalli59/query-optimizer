@@ -1,4 +1,4 @@
-# QueryOptimizer — Quick Start Reference Card
+# QueryLab — Quick Start Reference Card
 
 ---
 
@@ -135,4 +135,4 @@ docker compose down && rm -rf data/ && docker compose up -d
 
 ---
 
-*QueryOptimizer v1.0 · Self-Hosted · Full guide: docs/USER_GUIDE.md*
+*QueryLab v1.0 · Self-Hosted · Full guide: docs/USER_GUIDE.md*

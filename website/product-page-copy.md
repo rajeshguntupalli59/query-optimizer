@@ -1,10 +1,10 @@
-# QueryOptimizer — Product Page Copy
+# QueryLab — Product Page Copy
 # Paste this into Gumroad or Lemon Squeezy when creating your product listing.
 
 ---
 
 ## Product Name
-QueryOptimizer — Self-Hosted SQL Performance Workbench
+QueryLab — Self-Hosted SQL Performance Workbench
 
 ## Short Description (shown in search results / cards)
 Diagnose slow queries, find missing indexes, and rewrite bad SQL for PostgreSQL and SQL Server. Self-hosted. No subscription. Installs in 5 minutes.
@@ -18,7 +18,7 @@ $149 (one-time)
 
 **Stop guessing why your SQL is slow.**
 
-QueryOptimizer is a browser-based workbench for DBAs and developers who need to understand and fix slow queries — without sending their data to the cloud.
+QueryLab is a browser-based workbench for DBAs and developers who need to understand and fix slow queries — without sending their data to the cloud.
 
 It runs entirely on your own server. No subscription. No telemetry. No data ever leaves your infrastructure.
 
@@ -55,11 +55,11 @@ Save and switch between multiple database connections. Credentials are encrypted
 
 ### Installation
 
-QueryOptimizer ships as a single Docker Compose package. Requires Docker Desktop (Windows/Mac) or Docker Engine (Linux).
+QueryLab ships as a single Docker Compose package. Requires Docker Desktop (Windows/Mac) or Docker Engine (Linux).
 
 ```
-unzip queryoptimizer-v1.0.zip
-cd queryoptimizer
+unzip querylab-v1.0.zip
+cd querylab
 
 # Windows:
 powershell -ExecutionPolicy Bypass -File setup.ps1
@@ -83,7 +83,7 @@ Open your browser to http://localhost:3000. Takes under 5 minutes.
 
 ### What you receive after purchase
 
-- `queryoptimizer-v1.0.zip` — the complete application package
+- `querylab-v1.0.zip` — the complete application package
 - `QUICK_START.md` — 5-minute setup guide (included in the ZIP)
 - `USER_GUIDE.md` — complete feature reference (included in the ZIP)
 - Email support for installation questions
@@ -109,9 +109,9 @@ Developer Tools / Databases
 
 | Field | Value |
 |---|---|
-| Product name | QueryOptimizer — Self-Hosted SQL Performance Workbench |
+| Product name | QueryLab — Self-Hosted SQL Performance Workbench |
 | Price | $149 |
-| File to upload | dist/queryoptimizer-v1.0.zip |
+| File to upload | dist/querylab-v1.0.zip |
 | Call to action | Buy Now |
 | Receipt note | Thank you! Extract the ZIP and follow QUICK_START.md inside. Reply to this email if you need help. |
 | Support email | queryoptimizer78@gmail.com |

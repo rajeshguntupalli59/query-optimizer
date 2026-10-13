@@ -5,7 +5,7 @@ from pathlib import Path
 DATA_DIR = Path(os.getenv("DATA_DIR", "./data"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-DB_PATH = DATA_DIR / "queryoptimizer.db"
+DB_PATH = DATA_DIR / "querylab.db"
 
 # Fernet key for encrypting saved passwords.
 # Priority: SECRET_KEY env var → persisted key file → auto-generate + persist.

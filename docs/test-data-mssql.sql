@@ -1,5 +1,5 @@
 -- ============================================================
--- QueryOptimizer -- Sample Test Database (SQL Server)
+-- QueryLab -- Sample Test Database (SQL Server)
 -- Database: shopdb
 -- Run this entire script after connecting to your test DB
 -- ============================================================

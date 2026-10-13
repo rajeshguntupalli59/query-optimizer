@@ -1,4 +1,4 @@
-# QueryOptimizer — Testing Guide
+# QueryLab — Testing Guide
 
 This guide walks you through setting up a test database and running a query through every feature of the tool.
 
@@ -39,7 +39,7 @@ docker run -d `
   -c pg_stat_statements.track=all
 ```
 
-Connection details to use in QueryOptimizer:
+Connection details to use in QueryLab:
 | Field    | Value    |
 |----------|----------|
 | Host     | `localhost` |
@@ -58,7 +58,7 @@ Connection details to use in QueryOptimizer:
    ```sql
    CREATE DATABASE shopdb;
    ```
-4. Use these connection details in QueryOptimizer:
+4. Use these connection details in QueryLab:
 
 | Field    | Value        |
 |----------|--------------|
@@ -75,7 +75,7 @@ Connection details to use in QueryOptimizer:
 1. Go to **https://neon.tech** (free tier, no credit card)
 2. Create a project → it gives you a connection string
 3. Extract host, port (5432), database, username, password from the connection string
-4. Use those details in QueryOptimizer
+4. Use those details in QueryLab
 
 ---
 
@@ -102,7 +102,7 @@ The script creates 5 tables and loads:
 
 ---
 
-## Step 3 — Add the Connection in QueryOptimizer
+## Step 3 — Add the Connection in QueryLab
 
 1. Open **http://localhost:5173**
 2. Click **New** in the sidebar
@@ -206,7 +206,7 @@ GROUP BY c.email ORDER BY COUNT(*) DESC LIMIT 5;
 SELECT * FROM products WHERE price > 100 ORDER BY price DESC;
 ```
 
-Then in QueryOptimizer:
+Then in QueryLab:
 1. Set **Top** to `10`, **Min calls** to `1`
 2. Click **Load**
 
@@ -339,13 +339,13 @@ DROP DATABASE shopdb;
 
 # Appendix A — Testing against SQL Server
 
-Everything above uses PostgreSQL, but QueryOptimizer speaks T-SQL too.
+Everything above uses PostgreSQL, but QueryLab speaks T-SQL too.
 This appendix gets you a live SQL Server test database in about five minutes.
 
 ## A0 — Prerequisites (one time)
 
 The backend connects through **pyodbc**, so the machine running the
-QueryOptimizer backend needs Microsoft's ODBC driver:
+QueryLab backend needs Microsoft's ODBC driver:
 
 - **Windows:** install **ODBC Driver 18 for SQL Server** from
   https://learn.microsoft.com/sql/connect/odbc/download-odbc-driver-for-sql-server
@@ -373,7 +373,7 @@ docker exec -i mssql-test /opt/mssql-tools18/bin/sqlcmd \
   -S localhost -U sa -P "Test1234!" -C -i /tmp/seed.sql
 ```
 
-## A2 — Add the connection in QueryOptimizer
+## A2 — Add the connection in QueryLab
 
 1. Open the app, click **New** in the sidebar
 2. Select **SQL Server**

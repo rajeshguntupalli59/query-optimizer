@@ -1,11 +1,11 @@
-# QueryOptimizer — Project Context
+# QueryLab — Project Context
 
 Self-hosted SQL performance workbench for PostgreSQL and SQL Server. Sold at $149 via Lemon Squeezy.
 
 ## Stack
 - **Backend:** Python FastAPI, port 8000, venv at `backend/.venv`
 - **Frontend:** React + Vite + Tailwind, port 5173 dev / 3000 Docker
-- **Database:** SQLite at `data/queryoptimizer.db`
+- **Database:** SQLite at `data/querylab.db`
 
 ## CRITICAL: `redirect_slashes=False` must stay in `backend/main.py`
 Without it, `/connections` returns a 307 redirect and the frontend crashes on load.
@@ -41,8 +41,8 @@ docker compose up -d   # serves on port 3000
   ```
 
 ## Sales info
-- **Checkout:** https://queryoptimizer.lemonsqueezy.com/checkout/buy/50cb7c74-b67d-4058-ba70-4f108cc9f686
-- **Landing page:** https://rajeshguntupalli59.github.io/query-optimizer/
+- **Checkout:** https://querylab.lemonsqueezy.com/checkout/buy/50cb7c74-b67d-4058-ba70-4f108cc9f686
+- **Landing page:** https://rajeshguntupalli59.github.io/querylab/
 - **Support:** queryoptimizer78@gmail.com
 - **Price:** $149 one-time, 1 activation per license
 

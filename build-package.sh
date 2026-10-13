@@ -4,8 +4,8 @@
 
 set -euo pipefail
 
-VERSION="1.0"
-NAME="queryoptimizer-v${VERSION}"
+VERSION="1.1"
+NAME="querylab-v${VERSION}"
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 OUT="$ROOT/dist"
 STAGING="$OUT/$NAME"
@@ -58,7 +58,7 @@ EXCLUDE_PATTERNS=(
     ".claude"
     "*.log"
     ".secret_key"
-    "queryoptimizer.db"
+    "querylab.db"
     "tools"          # seller-only keygen scripts
 )
 

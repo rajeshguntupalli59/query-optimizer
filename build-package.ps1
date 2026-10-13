@@ -2,7 +2,7 @@
 # Usage: powershell -ExecutionPolicy Bypass -File build-package.ps1
 
 $version  = "1.0"
-$name     = "queryoptimizer-v$version"
+$name     = "querylab-v$version"
 $root     = $PSScriptRoot
 $out      = "$root\dist"
 $staging  = "$out\$name"
@@ -43,7 +43,7 @@ $excludeNames = @(
     ".claude",
     "*.log",
     ".secret_key",
-    "queryoptimizer.db",
+    "querylab.db",
     "tools"          # seller-only keygen scripts
 )
 

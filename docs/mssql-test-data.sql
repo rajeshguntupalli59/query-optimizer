@@ -1,5 +1,5 @@
 -- ============================================================================
--- QueryOptimizer — SQL Server test data (shopdb)
+-- QueryLab — SQL Server test data (shopdb)
 -- Creates a small shop schema with DELIBERATELY missing indexes so the
 -- Index Advisor, Rewriter and Slow Query tabs have something to find.
 --

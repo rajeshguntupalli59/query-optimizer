@@ -36,7 +36,7 @@ export default function Activate({ onActivated }) {
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mx-auto mb-5 shadow-xl shadow-blue-900/40">
             <Database size={26} className="text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">QueryOptimizer</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">QueryLab</h1>
           <p className="text-sm text-gray-400">Enter your license key to activate this installation.</p>
         </div>
 
@@ -72,7 +72,7 @@ export default function Activate({ onActivated }) {
 
         <p className="text-center text-xs text-gray-700 mt-5">
           License key is included in your purchase receipt.<br />
-          Questions? Email <span className="text-gray-500">support@queryoptimizer.dev</span>
+          Questions? Email <span className="text-gray-500">support@querylab.dev</span>
         </p>
       </div>
     </div>

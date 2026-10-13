@@ -5,7 +5,7 @@ CYAN='\033[0;36m' GREEN='\033[0;32m' YELLOW='\033[1;33m' RED='\033[0;31m' NC='\0
 
 echo ""
 echo -e "${CYAN}===========================================${NC}"
-echo -e "${CYAN}  QueryOptimizer — Installation${NC}"
+echo -e "${CYAN}  QueryLab — Installation${NC}"
 echo -e "${CYAN}===========================================${NC}"
 echo ""
 
@@ -43,12 +43,12 @@ echo -e "${CYAN}Building containers...${NC}"
 docker compose build
 
 echo ""
-echo -e "${CYAN}Starting QueryOptimizer...${NC}"
+echo -e "${CYAN}Starting QueryLab...${NC}"
 docker compose up -d
 
 echo ""
 echo -e "${GREEN}==========================================${NC}"
-echo -e "${GREEN}  QueryOptimizer is running!${NC}"
+echo -e "${GREEN}  QueryLab is running!${NC}"
 echo -e "${GREEN}==========================================${NC}"
 echo ""
 echo "  App:  http://localhost:3000"

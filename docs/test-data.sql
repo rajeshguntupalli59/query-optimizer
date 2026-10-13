@@ -1,5 +1,5 @@
 -- ============================================================
--- QueryOptimizer — Sample Test Database
+-- QueryLab — Sample Test Database
 -- Database: shopdb
 -- Run this entire script after connecting to your test DB
 -- ============================================================

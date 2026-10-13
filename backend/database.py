@@ -23,6 +23,16 @@ CREATE TABLE IF NOT EXISTS app_settings (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL DEFAULT ''
 );
+
+CREATE TABLE IF NOT EXISTS workloads (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,
+    db_type     TEXT NOT NULL,
+    source_name TEXT NOT NULL,
+    query_count INTEGER NOT NULL,
+    captured_at TEXT NOT NULL,
+    queries_json TEXT NOT NULL
+);
 """
 
 

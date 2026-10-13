@@ -1,16 +1,16 @@
-# QueryOptimizer
+# QueryLab
 
 **A free, self-hosted SQL performance workbench for PostgreSQL and Microsoft SQL Server DBAs.**
 
-QueryOptimizer gives your team a single browser-based tool to diagnose slow queries, find missing indexes, and rewrite inefficient SQL — without sending your data outside your infrastructure. 100% free, no signup, no license key.
+QueryLab gives your team a single browser-based tool to diagnose slow queries, find missing indexes, and rewrite inefficient SQL — without sending your data outside your infrastructure. 100% free, no signup, no license key.
 
 ## Demo
 
 Watch the 13-second tour (the interactive demo on the website analyzes a slow query right in your browser):
 
-<video src="https://rajeshguntupalli59.github.io/query-optimizer/demo.mp4" controls preload="metadata"></video>
+<video src="https://rajeshguntupalli59.github.io/querylab/demo.mp4" controls preload="metadata"></video>
 
-Or try it live: paste a query into the analyzer at https://rajeshguntupalli59.github.io/query-optimizer/ — no signup, no database connection needed.
+Or try it live: paste a query into the analyzer at https://rajeshguntupalli59.github.io/querylab/ — no signup, no database connection needed.
 
 ---
 
@@ -23,7 +23,13 @@ Run `EXPLAIN` or `EXPLAIN ANALYZE` (PostgreSQL) and `SET SHOWPLAN_ALL ON` (SQL S
 Paste any SQL query and get a prioritized list of missing indexes backed by live catalog data — not guesswork. Each recommendation comes with a ready-to-copy `CREATE INDEX` statement and an explanation of why it helps. For SQL Server, recommendations also pull from `sys.dm_db_missing_index_details`.
 
 ### Index Impact Test
-Don't guess — measure. Click **Test impact** on any recommendation and QueryOptimizer creates the index in a transaction-safe way, runs `EXPLAIN ANALYZE` before and after, then drops the index and shows you the exact runtime improvement (e.g. "6.7 ms → 0.04 ms, 99.4% faster"). PostgreSQL only.
+Don't guess — measure. Click **Test impact** on any recommendation and QueryLab creates the index in a transaction-safe way, runs `EXPLAIN ANALYZE` before and after, then drops the index and shows you the exact runtime improvement (e.g. "6.7 ms → 0.04 ms, 99.4% faster"). PostgreSQL only.
+
+### Index Hygiene
+The advisor also flags indexes that cost you on every write: never-scanned indexes (with reclaimable size) and duplicate indexes on the same columns — each with a ready-to-copy `DROP INDEX`.
+
+### Workload Replay
+Capture a production workload (top-N queries by total time from `pg_stat_statements` / `dm_exec_query_stats`), replay it against staging with configurable iterations × concurrency, and get a before/after report per query: OK, slower (≥50% regression), failed, errored, or blocked. Safe mode blocks writes/DDL by default. Engine-mismatch protection included.
 
 ### Slow Query Dashboard
 Surface your worst-performing queries ranked by average execution time. Pulls from `pg_stat_statements` (PostgreSQL) or `sys.dm_exec_query_stats` (SQL Server). Filter by minimum call count, reset statistics, and drill into timing details per query.
@@ -50,12 +56,12 @@ Save and switch between multiple database connections. Credentials are encrypted
 
 ## Installation
 
-QueryOptimizer ships as a single Docker Compose package. No external dependencies — just Docker.
+QueryLab ships as a single Docker Compose package. No external dependencies — just Docker.
 
 ```bash
 # Extract the package
-unzip queryoptimizer-v1.0.zip
-cd queryoptimizer
+unzip querylab-v1.0.zip
+cd querylab
 
 # Windows
 powershell -ExecutionPolicy Bypass -File setup.ps1
@@ -108,4 +114,4 @@ Free. Use it, share it, run it on as many servers as you like. The client is res
 
 ---
 
-*QueryOptimizer v1.0*
+*QueryLab v1.0*

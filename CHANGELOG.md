@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to QueryOptimizer are documented here.
+All notable changes to QueryLab are documented here.
 
 ---
 
@@ -47,4 +47,4 @@ First production release. All features tested against PostgreSQL 12–17 and Mic
 
 ---
 
-*QueryOptimizer is a commercial self-hosted product. See [LICENSE](LICENSE) for terms.*
+*QueryLab is a commercial self-hosted product. See [LICENSE](LICENSE) for terms.*

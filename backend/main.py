@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db
-from routers import connections, explain, indexes, slow_queries, rewriter, ai, license as license_router
+from routers import connections, explain, indexes, slow_queries, rewriter, ai, license as license_router, workload
 
 
 @asynccontextmanager
@@ -12,7 +12,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="QueryOptimizer",
+    title="QueryLab",
     version="1.0.0",
     description="Self-hosted SQL query optimization workbench for DBAs",
     lifespan=lifespan,
@@ -33,6 +33,7 @@ app.include_router(indexes.router)
 app.include_router(slow_queries.router)
 app.include_router(rewriter.router)
 app.include_router(ai.router)
+app.include_router(workload.router)
 app.include_router(license_router.router)
 
 

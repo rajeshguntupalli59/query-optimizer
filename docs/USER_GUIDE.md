@@ -1,4 +1,4 @@
-# QueryOptimizer — User Guide
+# QueryLab — User Guide
 
 **Version 1.0 · Commercial Self-Hosted Edition**
 
@@ -13,18 +13,19 @@
 5. [Managing Database Connections](#5-managing-database-connections)
 6. [EXPLAIN Visualizer](#6-explain-visualizer)
 7. [Index Advisor](#7-index-advisor)
-8. [Slow Query Dashboard](#8-slow-query-dashboard)
-9. [Query Rewriter](#9-query-rewriter)
-10. [AI Assistant](#10-ai-assistant)
-11. [Settings](#11-settings)
-12. [Troubleshooting](#12-troubleshooting)
-13. [FAQ](#13-faq)
+8. [Workload Replay](#8-workload-replay)
+9. [Slow Query Dashboard](#9-slow-query-dashboard)
+10. [Query Rewriter](#10-query-rewriter)
+11. [AI Assistant](#11-ai-assistant)
+12. [Settings](#12-settings)
+13. [Troubleshooting](#13-troubleshooting)
+14. [FAQ](#14-faq)
 
 ---
 
 ## 1. Overview
 
-**QueryOptimizer** is a self-hosted DBA workbench for diagnosing and improving SQL query performance. It connects directly to your PostgreSQL or Microsoft SQL Server databases and gives you five tools in one interface:
+**QueryLab** is a self-hosted DBA workbench for diagnosing and improving SQL query performance. It connects directly to your PostgreSQL or Microsoft SQL Server databases and gives you five tools in one interface:
 
 | Feature | What it does | Needs a DB? |
 |---|---|---|
@@ -40,7 +41,7 @@
 
 ## 2. System Requirements
 
-### Server running QueryOptimizer
+### Server running QueryLab
 
 | Requirement | Minimum |
 |---|---|
@@ -66,22 +67,22 @@
 
 ### Step 1 — Download the package
 
-Extract the `queryoptimizer-v1.0.zip` archive to a folder of your choice:
+Extract the `querylab-v1.0.zip` archive to a folder of your choice:
 
-- **Windows:** `C:\Tools\queryoptimizer\`
-- **Linux / macOS:** `/opt/queryoptimizer/`
+- **Windows:** `C:\Tools\querylab\`
+- **Linux / macOS:** `/opt/querylab/`
 
 ### Step 2 — Run the installer
 
 **Windows (PowerShell):**
 ```powershell
-cd C:\Tools\queryoptimizer
+cd C:\Tools\querylab
 powershell -ExecutionPolicy Bypass -File setup.ps1
 ```
 
 **Linux / macOS:**
 ```bash
-cd /opt/queryoptimizer
+cd /opt/querylab
 chmod +x setup.sh && ./setup.sh
 ```
 
@@ -119,7 +120,7 @@ If other team members will access the tool remotely, expose port 3000 through yo
 
 ## 4. First-Time Setup
 
-When you open QueryOptimizer for the first time you will see the Overview screen.
+When you open QueryLab for the first time you will see the Overview screen.
 
 **To start analyzing queries:**
 
@@ -158,7 +159,7 @@ localhost\SQLEXPRESS
 
 Do not enter a port number when using a named instance — the tool resolves it automatically.
 
-**Windows Authentication** — leave both Username and Password blank. The tool will connect using the Windows account that runs the service. This works when QueryOptimizer is installed on the same Windows server as SQL Server.
+**Windows Authentication** — leave both Username and Password blank. The tool will connect using the Windows account that runs the service. This works when QueryLab is installed on the same Windows server as SQL Server.
 
 ### Testing a connection
 
@@ -238,6 +239,14 @@ The tool flags these patterns automatically:
 
 The Index Advisor checks your query against the live database catalog to find missing or ineffective indexes. It generates ready-to-run DDL.
 
+### Index hygiene
+
+The advisor also reports on indexes that hurt you on every write, scoped to the tables in your query:
+- **Unused indexes** — never scanned since statistics were reset (shows reclaimable size)
+- **Duplicate indexes** — same columns under two different names
+
+Each comes with a `DROP INDEX` statement. Review before running — the advisor never executes drops itself.
+
 ### How to use it
 
 1. Paste your SQL (any SELECT, UPDATE, DELETE with a WHERE clause or JOIN)
@@ -268,7 +277,7 @@ Click **Copy** on the DDL block, review the statement, and run it in your databa
 
 ### Testing impact before you commit (PostgreSQL)
 
-Instead of guessing whether an index will help, click **Test impact** on any recommendation. QueryOptimizer will:
+Instead of guessing whether an index will help, click **Test impact** on any recommendation. QueryLab will:
 
 1. Run `EXPLAIN ANALYZE` on your query and record the baseline runtime and plan
 2. Create the recommended index as a temporary index
@@ -281,7 +290,39 @@ You get a before/after report: runtime, plan node (e.g. `Seq Scan` → `Bitmap H
 
 ---
 
-## 8. Slow Query Dashboard
+## 8. Workload Replay
+
+**Tab:** Workload Replay
+**Requires:** Active database connection
+
+Capture a production workload and replay it against staging to catch regressions before go-live — not after.
+
+### How it works
+
+1. **Capture** — pick a source (production) connection, name the workload, choose top-N. QueryLab reads the top queries by total time from `pg_stat_statements` (PostgreSQL) or `sys.dm_exec_query_stats` (SQL Server), storing each query's SQL plus its production call count and mean execution time as the baseline.
+2. **Replay** — pick the saved workload and a target (staging) connection. Set iterations (1–20) and concurrency (1–32). Each query runs repeatedly across worker threads.
+3. **Compare** — every query gets a status:
+   - **OK** — no significant change
+   - **SLOWER** — replay mean ≥50% above baseline
+   - **FAILED** — every run errored (e.g. missing table on staging)
+   - **ERRORS** — some runs failed
+   - **BLOCKED** — skipped by safe mode (write/DDL statement)
+
+### Safe mode
+
+On by default. Blocks `INSERT`/`UPDATE`/`DELETE`/`MERGE`/DDL statements from executing on the target. Turn it off only if you want a full write replay against a disposable staging copy.
+
+### Engine protection
+
+A workload captured from PostgreSQL can only replay against PostgreSQL, and likewise for SQL Server. Cross-engine replay is rejected.
+
+### Tips
+
+- Capture during a representative peak window for the most useful baseline.
+- Start with 3 iterations × 4 workers; raise concurrency to simulate real load.
+- "SLOWER" flags are the ones to investigate — check the replay min/max spread for variance.
+
+## 9. Slow Query Dashboard
 
 **Tab:** Slow Queries
 **Requires:** Active database connection
@@ -337,7 +378,7 @@ Click **Reset stats** to clear accumulated data and start fresh.
 
 ---
 
-## 9. Query Rewriter
+## 10. Query Rewriter
 
 **Tab:** Query Rewriter
 **Requires:** No database connection needed
@@ -372,7 +413,7 @@ The Query Rewriter performs static analysis on SQL you paste in, detecting commo
 
 ---
 
-## 10. AI Assistant
+## 11. AI Assistant
 
 **Tab:** AI Assistant
 **Requires:** AI endpoint configured in Settings
@@ -413,7 +454,7 @@ If the tab shows "AI is not configured," click the gear icon ⚙ in the top-righ
 
 ---
 
-## 11. Settings
+## 12. Settings
 
 **Access:** Gear icon ⚙ — top-right corner of the header
 
@@ -451,7 +492,7 @@ Settings saved in the UI take precedence over `.env` values.
 
 ---
 
-## 12. Troubleshooting
+## 13. Troubleshooting
 
 ### Application won't start
 
@@ -496,7 +537,7 @@ docker compose logs frontend
 **SQL Server: Windows Authentication**
 - Leave both Username and Password blank in the connection form
 - The tool connects using the Windows account running the Docker service
-- This works when QueryOptimizer and SQL Server are on the same Windows machine
+- This works when QueryLab and SQL Server are on the same Windows machine
 
 **"SSL connection required"** (PostgreSQL cloud providers)
 - AWS RDS, Google Cloud SQL, and similar providers require SSL
@@ -558,7 +599,7 @@ docker compose up -d
 
 ---
 
-## 13. FAQ
+## 14. FAQ
 
 **Q: Do I need an internet connection?**
 
@@ -578,7 +619,7 @@ A: Passwords are encrypted using Fernet symmetric encryption before being writte
 
 ---
 
-**Q: Can QueryOptimizer change anything in my database?**
+**Q: Can QueryLab change anything in my database?**
 
 A: Only if you explicitly run something that modifies data. The EXPLAIN Visualizer (without ANALYZE), Index Advisor, Slow Query Dashboard, and Query Rewriter are all read-only. The only times a query executes are:
 
@@ -589,7 +630,7 @@ A: Only if you explicitly run something that modifies data. The EXPLAIN Visualiz
 
 **Q: Can I connect to Amazon RDS, Google Cloud SQL, or Azure SQL?**
 
-A: Yes. Use the endpoint hostname provided by your cloud provider. Ensure the server running QueryOptimizer can reach the database port (5432 for PostgreSQL, 1433 for SQL Server) — you may need to add the server's IP to your cloud firewall or security group rules.
+A: Yes. Use the endpoint hostname provided by your cloud provider. Ensure the server running QueryLab can reach the database port (5432 for PostgreSQL, 1433 for SQL Server) — you may need to add the server's IP to your cloud firewall or security group rules.
 
 ---
 
@@ -616,5 +657,5 @@ A: The Query Rewriter analyzes SQL text without connecting to a database, so it 
 
 ---
 
-*QueryOptimizer v1.0 — Commercial Self-Hosted Edition*
+*QueryLab v1.0 — Commercial Self-Hosted Edition*
 *For support, contact your vendor with your purchase reference number.*
